@@ -10,8 +10,12 @@ import express from 'express';
 import { EmailService } from '../services';
 import { databaseManager } from '../database/DatabaseManager';
 import { getAccountWithCredentials } from '../utils/accountHelpers';
+import { AuthMiddleware } from '../auth/AuthMiddleware';
 
 const router = express.Router();
+
+// Apply authentication middleware to all email routes
+router.use(AuthMiddleware.authenticate);
 
 /**
  * GET /api/emails/:accountId
@@ -21,14 +25,14 @@ const router = express.Router();
  * - forceRefresh: boolean (skip cache)
  * - limit: number (default 30)
  */
-router.get('/:accountId', async (req, res) => {
+router.get('/:accountId', AuthMiddleware.requireAccountOwnership(), async (req, res) => {
   try {
     const { accountId } = req.params;
     const { forceRefresh, limit } = req.query;
     
     console.log(`📧 GET /api/emails/${accountId} - ForceRefresh: ${forceRefresh}, Limit: ${limit}`);
     
-    // Get account details
+    // Get account with credentials (already verified by middleware)
     const account = await getAccountWithCredentials(accountId);
     if (!account) {
       return res.status(404).json({
@@ -80,13 +84,13 @@ router.get('/:accountId', async (req, res) => {
  * 
  * Smart email content loading (cache-first)
  */
-router.get('/:accountId/:emailId/content', async (req, res) => {
+router.get('/:accountId/:emailId/content', AuthMiddleware.requireAccountOwnership(), async (req, res) => {
   try {
     const { accountId, emailId } = req.params;
     
     console.log(`📄 GET /api/emails/${accountId}/${emailId}/content`);
     
-    // Get account details
+    // Get account with credentials (already verified by middleware)
     const account = await getAccountWithCredentials(accountId);
     if (!account) {
       return res.status(404).json({
@@ -124,13 +128,13 @@ router.get('/:accountId/:emailId/content', async (req, res) => {
  * 
  * Mark email as read (both IMAP and cache)
  */
-router.post('/:accountId/:emailId/read', async (req, res) => {
+router.post('/:accountId/:emailId/read', AuthMiddleware.requireAccountOwnership(), async (req, res) => {
   try {
     const { accountId, emailId } = req.params;
     
     console.log(`📖 POST /api/emails/${accountId}/${emailId}/read`);
     
-    // Get account details
+    // Get account with credentials (already verified by middleware)
     const account = await getAccountWithCredentials(accountId);
     if (!account) {
       return res.status(404).json({
@@ -167,13 +171,13 @@ router.post('/:accountId/:emailId/read', async (req, res) => {
  * 
  * Delete email (both IMAP and cache)
  */
-router.delete('/:accountId/:emailId', async (req, res) => {
+router.delete('/:accountId/:emailId', AuthMiddleware.requireAccountOwnership(), async (req, res) => {
   try {
     const { accountId, emailId } = req.params;
     
     console.log(`🗑️ DELETE /api/emails/${accountId}/${emailId}`);
     
-    // Get account details
+    // Get account with credentials (already verified by middleware)
     const account = await getAccountWithCredentials(accountId);
     if (!account) {
       return res.status(404).json({
@@ -210,7 +214,7 @@ router.delete('/:accountId/:emailId', async (req, res) => {
  * 
  * Smart email search (cache + IMAP)
  */
-router.get('/:accountId/search', async (req, res) => {
+router.get('/:accountId/search', AuthMiddleware.requireAccountOwnership(), async (req, res) => {
   try {
     const { accountId } = req.params;
     const { q: query } = req.query;
@@ -224,7 +228,7 @@ router.get('/:accountId/search', async (req, res) => {
     
     console.log(`🔍 GET /api/v2/emails/${accountId}/search?q=${query}`);
     
-    // Get account details
+    // Get account with credentials (already verified by middleware)
     const account = await getAccountWithCredentials(accountId);
     if (!account) {
       return res.status(404).json({
@@ -264,13 +268,13 @@ router.get('/:accountId/search', async (req, res) => {
  * 
  * Download email attachment (always from IMAP)
  */
-router.get('/:accountId/:emailId/attachments/:attachmentId', async (req, res) => {
+router.get('/:accountId/:emailId/attachments/:attachmentId', AuthMiddleware.requireAccountOwnership(), async (req, res) => {
   try {
     const { accountId, emailId, attachmentId } = req.params;
     
     console.log(`📎 GET /api/emails/${accountId}/${emailId}/attachments/${attachmentId}`);
     
-    // Get account details
+    // Get account with credentials (already verified by middleware)
     const account = await getAccountWithCredentials(accountId);
     if (!account) {
       return res.status(404).json({
@@ -312,7 +316,7 @@ router.get('/:accountId/:emailId/attachments/:attachmentId', async (req, res) =>
  * 
  * Get account email status (refresh status, cache stats)
  */
-router.get('/:accountId/status', async (req, res) => {
+router.get('/:accountId/status', AuthMiddleware.requireAccountOwnership(), async (req, res) => {
   try {
     const { accountId } = req.params;
     

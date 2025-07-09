@@ -43,8 +43,12 @@ router.post('/complete', AuthMiddleware.authenticate, AuthMiddleware.requireAdmi
 
 /**
  * POST /setup/reset
- * Reset setup (development only)
+ * Reset setup (development only, requires admin auth in production)
  */
-router.post('/reset', SetupController.resetSetup);
+if (process.env.NODE_ENV === 'production') {
+  router.post('/reset', AuthMiddleware.authenticate, AuthMiddleware.requireAdmin, SetupController.resetSetup);
+} else {
+  router.post('/reset', SetupController.resetSetup);
+}
 
 export default router;

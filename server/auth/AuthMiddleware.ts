@@ -8,11 +8,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { TokenManager, TokenPayload } from './TokenManager';
 
-// Extend Express Request type to include user data
+// Extend Express Request type to include user data and account
 declare global {
   namespace Express {
     interface Request {
       user?: TokenPayload;
+      account?: any; // Will be properly typed when we import Account type
     }
   }
 }
@@ -169,6 +170,73 @@ export class AuthMiddleware {
   static requireSetupMode = (req: Request, res: Response, next: NextFunction): void => {
     // This will be implemented in Phase 2 when we add setup detection
     next();
+  };
+
+  /**
+   * Middleware to verify user owns the account specified in params
+   * Automatically checks :accountId parameter and validates ownership
+   */
+  static requireAccountOwnership = (accountIdParam: string = 'accountId') => {
+    return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+      try {
+        // First ensure user is authenticated
+        if (!req.user) {
+          res.status(401).json({
+            error: 'Authentication required',
+            message: 'User not authenticated'
+          });
+          return;
+        }
+
+        // Get account ID from params
+        const accountId = req.params[accountIdParam];
+        if (!accountId) {
+          res.status(400).json({
+            error: 'Bad request',
+            message: `Missing ${accountIdParam} parameter`
+          });
+          return;
+        }
+
+        // Import here to avoid circular dependency
+        const { DatabaseManager } = await import('../database/DatabaseManager');
+        const dbManager = DatabaseManager.getInstance();
+
+        // Get account and verify ownership
+        const account = await dbManager.getAccount(accountId);
+        if (!account) {
+          res.status(404).json({
+            success: false,
+            error: 'Account not found'
+          });
+          return;
+        }
+
+        // Check if user owns this account (admins can access all accounts)
+        const isOwner = account.user_id === req.user.userId;
+        const isAdmin = req.user.role === 'admin';
+
+        if (!isOwner && !isAdmin) {
+          res.status(403).json({
+            success: false,
+            error: 'Access denied',
+            message: 'You do not have permission to access this account'
+          });
+          return;
+        }
+
+        // Attach account to request for use in route handlers
+        (req as any).account = account;
+
+        next();
+      } catch (error) {
+        console.error('❌ Account ownership check failed:', error);
+        res.status(500).json({
+          error: 'Authorization check failed',
+          message: 'Unable to verify account ownership'
+        });
+      }
+    };
   };
 
   /**

@@ -1,8 +1,12 @@
 import express from 'express';
 import { ImapService, ImapContainer } from '../../src/imap';
 import { MimeParser } from '../../src/imap/MimeParser';
+import { AuthMiddleware } from '../auth/AuthMiddleware';
 
 const router = express.Router();
+
+// Apply authentication middleware to all IMAP routes
+router.use(AuthMiddleware.authenticate);
 
 router.post('/test-connection', async (req, res) => {
   try {

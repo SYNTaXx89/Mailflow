@@ -6,16 +6,21 @@
 
 import express from 'express';
 import { EmailCacheService, CachedEmail } from '../cache/EmailCacheService';
+import { AuthMiddleware } from '../auth/AuthMiddleware';
 
 const router = express.Router();
 
+// Apply authentication middleware to all cache routes
+router.use(AuthMiddleware.authenticate);
+
 // GET /api/cache/:accountId/emails
-router.get('/:accountId/emails', async (req, res) => {
+router.get('/:accountId/emails', AuthMiddleware.requireAccountOwnership(), async (req, res) => {
   try {
     const { accountId } = req.params;
     const { limit } = req.query;
     
     console.log(`📂 Getting cached emails for account: ${accountId}`);
+    
     
     const emails = await EmailCacheService.getCachedEmails(
       accountId, 
@@ -68,10 +73,11 @@ router.get('/email/:emailId/content', async (req, res) => {
 });
 
 // POST /api/cache/:accountId/emails
-router.post('/:accountId/emails', async (req, res) => {
+router.post('/:accountId/emails', AuthMiddleware.requireAccountOwnership(), async (req, res) => {
   try {
     const { accountId } = req.params;
     const { emails } = req.body;
+    
     
     if (!Array.isArray(emails)) {
       return res.status(400).json({
@@ -147,10 +153,11 @@ router.delete('/email/:emailId', async (req, res) => {
 });
 
 // GET /api/cache/:accountId/search?q=query
-router.get('/:accountId/search', async (req, res) => {
+router.get('/:accountId/search', AuthMiddleware.requireAccountOwnership(), async (req, res) => {
   try {
     const { accountId } = req.params;
     const { q: query } = req.query;
+    
     
     if (!query || typeof query !== 'string') {
       return res.status(400).json({
@@ -180,9 +187,10 @@ router.get('/:accountId/search', async (req, res) => {
 });
 
 // GET /api/cache/:accountId/stats
-router.get('/:accountId/stats', async (req, res) => {
+router.get('/:accountId/stats', AuthMiddleware.requireAccountOwnership(), async (req, res) => {
   try {
     const { accountId } = req.params;
+    
     
     console.log(`📊 Getting cache stats for account: ${accountId}`);
     
@@ -203,9 +211,10 @@ router.get('/:accountId/stats', async (req, res) => {
 });
 
 // DELETE /api/cache/:accountId
-router.delete('/:accountId', async (req, res) => {
+router.delete('/:accountId', AuthMiddleware.requireAccountOwnership(), async (req, res) => {
   try {
     const { accountId } = req.params;
+    
     
     console.log(`🧹 Clearing cache for account: ${accountId}`);
     
@@ -225,8 +234,8 @@ router.delete('/:accountId', async (req, res) => {
   }
 });
 
-// POST /api/cache/cleanup
-router.post('/cleanup', async (req, res) => {
+// POST /api/cache/cleanup (Admin only)
+router.post('/cleanup', AuthMiddleware.requireAdmin, async (req, res) => {
   try {
     console.log(`🧹 Starting cache cleanup (removing emails older than 30 days)`);
     
