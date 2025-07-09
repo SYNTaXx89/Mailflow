@@ -2,7 +2,7 @@
  * Authentication Middleware - Request authentication and authorization
  * 
  * Express middleware for validating JWT tokens and protecting routes
- * in the self-hosted MailFlow instance.
+ * in the self-hosted Mailflow instance.
  */
 
 import { Request, Response, NextFunction } from 'express';

@@ -2,7 +2,7 @@
  * Authentication Routes
  * 
  * Handles user authentication, token management, and session operations
- * for the self-hosted MailFlow instance.
+ * for the self-hosted Mailflow instance.
  */
 
 import express from 'express';

@@ -2,7 +2,7 @@
  * Complete Step - Setup completion
  * 
  * Final step that completes the setup process and welcomes users
- * to their new MailFlow instance.
+ * to their new Mailflow instance.
  */
 
 import React, { useState, useEffect } from 'react';
@@ -69,7 +69,7 @@ const CompleteStep: React.FC<CompleteStepProps> = ({ setupData, adminToken, onNe
         </div>
         <h1 className="text-2xl font-bold text-white mb-4">Finalizing Setup</h1>
         <p className="text-gray-400">
-          Completing your MailFlow instance configuration...
+          Completing your Mailflow instance configuration...
         </p>
       </div>
     );
@@ -86,7 +86,7 @@ const CompleteStep: React.FC<CompleteStepProps> = ({ setupData, adminToken, onNe
           <CheckCircle className="w-10 h-10 text-white" />
         </div>
         <h1 className="text-3xl font-bold text-white mb-4">
-          🎉 Welcome to MailFlow!
+          🎉 Welcome to Mailflow!
         </h1>
         <p className="text-gray-400 text-lg">
           Your self-hosted email client is ready to use
@@ -233,7 +233,7 @@ const CompleteStep: React.FC<CompleteStepProps> = ({ setupData, adminToken, onNe
           onClick={handleContinue}
           className="px-8 py-3 bg-gradient-to-r from-teal-600 to-purple-600 text-white font-semibold rounded-lg hover:from-teal-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center"
         >
-          Continue to MailFlow
+          Continue to Mailflow
           <ExternalLink className="w-5 h-5 ml-2" />
         </button>
       </div>

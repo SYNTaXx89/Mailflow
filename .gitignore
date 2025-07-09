@@ -29,7 +29,7 @@ dist-ssr
 .env.test.local
 .env.production.local
 
-# MailFlow instance data (self-hosted configuration)
+# Mailflow instance data (self-hosted configuration)
 .mailflow/
 mailflow-dev-data/
 mailflow-data/

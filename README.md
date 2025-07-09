@@ -1,26 +1,58 @@
-# MailFlow - Self-Hosted Email Client 🐳
+# Mailflow - Self-Hosted Email Client 🐳 (Beta)
 
-A production-ready, self-hosted email client built with React, TypeScript, and Express. MailFlow features JWT authentication, encrypted storage, and a complete setup wizard for secure deployment.
+A self-hosted email client built with React, TypeScript, and Express. Mailflow features JWT authentication, encrypted storage, and a complete setup wizard for secure deployment.
 
-![MailFlow Email Client](https://img.shields.io/badge/React-18.2.0-blue) ![TypeScript](https://img.shields.io/badge/TypeScript-5.0.2-blue) ![Vite](https://img.shields.io/badge/Vite-4.4.5-purple) ![Docker](https://img.shields.io/badge/Docker-Ready-blue)
+> **🚧 Beta Release**: Mailflow is currently in beta state. Core functionality is stable and ready for daily use, with ongoing feature development and improvements.
 
-## 🌟 Why MailFlow?
+![Mailflow Email Client](https://img.shields.io/badge/React-18.2.0-blue) ![TypeScript](https://img.shields.io/badge/TypeScript-5.0.2-blue) ![Vite](https://img.shields.io/badge/Vite-4.4.5-purple) ![Docker](https://img.shields.io/badge/Docker-Ready-blue)
 
-**MailFlow follows the n8n model**: Self-hosted by default with complete privacy and control.
+## 🌟 Why Mailflow?
+
+**The Email Client That Actually Solves Your Real Problem**
+
+Every email client today suffers from the same problem: they add feature after feature, but somehow miss the most basic need that everyone has. **Mailflow is different** - it's the first email client that's truly platform-agnostic and solves the real issue: **one setup, everywhere**.
+
+### 🎯 **The Problem Mailflow Solves**
+
+**Multi-Device Email Hell**: You have an iPhone, a Mac, a Windows PC, maybe multiple computers. As a freelancer or professional, you constantly get new email accounts for clients and projects. With traditional email clients, you need to:
+- ✋ Add every account on every device
+- ✋ Reconfigure everything when you get a new computer  
+- ✋ Deal with Gmail working well for some accounts, but not others
+- ✋ Repeat this process endlessly
+
+**Mailflow's Solution**: Add all your IMAP accounts **once**. Use them on **every computer** you have. Period.
+
+### 🚀 **The Mailflow Advantage**
+
+**🔄 Universal Setup**: Configure your email accounts once in Mailflow's self-hosted instance. Access them from any device, anywhere.
+
+**🌐 Platform Freedom**: Works identically on Mac, Windows, Linux, mobile - no platform-specific limitations or vendor lock-in.
+
+**📧 True IMAP Support**: Unlike Gmail's limited support, Mailflow works with **every** IMAP provider - your work Exchange, personal Gmail, custom domains, everything.
+
+**🔒 Privacy First**: Self-hosted with local encrypted database. Your emails never touch third-party servers. Mount your own disk for complete control.
+
+**⚡ Just Email**: No bloat, no unnecessary features. Just the core email functionality you actually need, done right.
+
+### 💼 **Perfect for Freelancers & Professionals**
+
+Stop wasting time adding the same email accounts to every new device. Stop dealing with partial Gmail support. Stop worrying about where your emails are stored. **Mailflow gives you one email setup that works everywhere, forever.**
+
+**Self-hosted by default** with complete privacy and control.
 
 ### 🔐 Production-Ready Features
 - **🔑 JWT Authentication**: Secure token-based authentication with automatic refresh
 - **🛡️ Zero Trust**: Your credentials never leave your server
 - **🏗️ Self-Hosted**: Complete control over your email infrastructure  
 - **🔒 Encrypted Storage**: SQLite database with encrypted sensitive data
-- **🎯 Setup Wizard**: n8n-style initial configuration with admin account creation
+- **🎯 Setup Wizard**: Initial configuration with admin account creation
 - **🐳 Docker-First**: Consistent deployment across all environments
 
 ---
 
 ## 🐳 **Docker-Only Deployment**
 
-MailFlow is designed to run exclusively in Docker for consistency across all environments.
+Mailflow is designed to run exclusively in Docker for consistency across all environments.
 
 ### **Prerequisites**
 - **Docker** (v20.10+)
@@ -31,7 +63,7 @@ MailFlow is designed to run exclusively in Docker for consistency across all env
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd MailFlow
+cd Mailflow
 
 # Start production environment
 ./scripts/docker-prod.sh
@@ -40,7 +72,7 @@ cd MailFlow
 docker-compose up --build -d
 ```
 
-**MailFlow will be available at: http://localhost:3000**
+**Mailflow will be available at: http://localhost:3000**
 
 ### **🔧 Development Environment**
 
@@ -93,7 +125,7 @@ services:
 | `NODE_ENV` | `production` | Runtime environment |
 | `MAILFLOW_DATA_DIR` | `/app/data/.mailflow` | Data storage directory |
 | `VITE_API_BASE_URL` | `/api` | API base URL |
-| `VITE_APP_NAME` | `MailFlow` | Application name |
+| `VITE_APP_NAME` | `Mailflow` | Application name |
 
 ### **Volume Mounting**
 
@@ -110,7 +142,7 @@ services:
 
 ## 🎯 **Setup Wizard**
 
-MailFlow includes an n8n-style setup wizard that runs automatically on first access:
+Mailflow includes a setup wizard that runs automatically on first access:
 
 ### **Setup Flow**
 1. **🏠 Welcome Screen** - Privacy explanation and features overview
@@ -134,7 +166,7 @@ MailFlow includes an n8n-style setup wizard that runs automatically on first acc
 ## 📊 **Architecture Overview**
 
 ```
-MailFlow Docker Architecture:
+Mailflow Docker Architecture:
 ┌─────────────────────────────────────┐
 │             Docker Container        │
 ├─────────────────────────────────────┤
@@ -249,7 +281,7 @@ docker stop mailflow && docker rm mailflow
 ### **Project Structure**
 
 ```
-MailFlow/
+Mailflow/
 ├── 🐳 Docker Configuration
 │   ├── Dockerfile              # Production build
 │   ├── Dockerfile.dev          # Development build
@@ -316,7 +348,7 @@ docker cp ./backup.db mailflow:/app/data/.mailflow/database.db
 ```bash
 # Clone and deploy
 git clone <repository-url>
-cd MailFlow
+cd Mailflow
 ./scripts/docker-prod.sh
 ```
 
@@ -448,11 +480,11 @@ docker logs -f mailflow
 
 ## 📋 **Current Status**
 
-MailFlow is a **production-ready email client** with full email functionality and real-time notifications:
+Mailflow is a **beta-stage email client** with full email functionality and real-time notifications:
 
 ### **✅ Completed Features**
 - **🔑 JWT Authentication System**: Complete token-based auth with refresh tokens
-- **🎯 Setup Wizard**: n8n-style initial configuration flow
+- **🎯 Setup Wizard**: Initial configuration flow
 - **🔐 Secure Login**: Email/password authentication with token management
 - **🛡️ Encrypted Storage**: SQLite database with AES-256-CBC credential encryption
 - **🏢 Multi-Account Management**: Full CRUD operations for email accounts
@@ -506,7 +538,7 @@ MailFlow is a **production-ready email client** with full email functionality an
 - **🔐 SSO Integration**: Enterprise authentication options
 
 ### **🔒 Security Status**
-**PRODUCTION-READY**: All critical security vulnerabilities resolved
+**BETA-READY**: Core security stable, ongoing improvements
 - **Authentication**: ✅ JWT-based with proper token validation
 - **Authorization**: ✅ Complete user data isolation
 - **Data Protection**: ✅ Encrypted sensitive credentials

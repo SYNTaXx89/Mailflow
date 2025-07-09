@@ -76,7 +76,7 @@ const AppRouter: React.FC = () => {
           <div className="w-16 h-16 bg-gradient-to-br from-teal-600 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
             <Loader2 className="w-8 h-8 text-white animate-spin" />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Loading MailFlow</h1>
+          <h1 className="text-2xl font-bold text-white mb-2">Loading Mailflow</h1>
           <p className="text-gray-400">Checking instance status...</p>
         </div>
       </div>
@@ -101,7 +101,7 @@ const AppRouter: React.FC = () => {
               Retry Connection
             </button>
             <p className="text-gray-500 text-sm">
-              Make sure the MailFlow server is running
+              Make sure the Mailflow server is running
             </p>
           </div>
         </div>
@@ -134,7 +134,7 @@ const AppRouter: React.FC = () => {
           <div className="w-16 h-16 bg-gradient-to-br from-teal-600 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
             <Loader2 className="w-8 h-8 text-white animate-spin" />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Loading MailFlow</h1>
+          <h1 className="text-2xl font-bold text-white mb-2">Loading Mailflow</h1>
           <p className="text-gray-400">Checking authentication...</p>
         </div>
       </div>

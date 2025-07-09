@@ -9,7 +9,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 
-export interface MailFlowConfig {
+export interface MailflowConfig {
   version: string;
   instanceId: string;
   instanceName: string;
@@ -50,7 +50,7 @@ export interface MailFlowConfig {
 
 export class ConfigManager {
   private static instance: ConfigManager;
-  private config: MailFlowConfig | null = null;
+  private config: MailflowConfig | null = null;
   private readonly configPath: string;
   private readonly configDir: string;
 
@@ -119,7 +119,7 @@ export class ConfigManager {
     this.config = {
       version: '1.0.0',
       instanceId: crypto.randomUUID(),
-      instanceName: 'MailFlow Instance',
+      instanceName: 'Mailflow Instance',
       setup: {
         completed: false
       },
@@ -184,7 +184,7 @@ export class ConfigManager {
   /**
    * Get configuration value
    */
-  get<K extends keyof MailFlowConfig>(key: K): MailFlowConfig[K] | undefined {
+  get<K extends keyof MailflowConfig>(key: K): MailflowConfig[K] | undefined {
     return this.config?.[key];
   }
 
@@ -211,7 +211,7 @@ export class ConfigManager {
   /**
    * Set configuration value
    */
-  async set<K extends keyof MailFlowConfig>(key: K, value: MailFlowConfig[K]): Promise<void> {
+  async set<K extends keyof MailflowConfig>(key: K, value: MailflowConfig[K]): Promise<void> {
     if (!this.config) {
       throw new Error('Configuration not initialized');
     }
@@ -273,7 +273,7 @@ export class ConfigManager {
   /**
    * Get full configuration (for debugging)
    */
-  getFullConfig(): MailFlowConfig | null {
+  getFullConfig(): MailflowConfig | null {
     return this.config;
   }
 

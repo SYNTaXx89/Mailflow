@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-MailFlow is a modern React-based email client application built with TypeScript and Vite. The application features a clean, modular architecture with proper component separation and comprehensive TypeScript typing.
+Mailflow is a modern React-based email client application built with TypeScript and Vite. The application features a clean, modular architecture with proper component separation and comprehensive TypeScript typing.
 
 ## Getting Started
 

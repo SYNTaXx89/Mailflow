@@ -1,7 +1,7 @@
 /**
  * Setup Routes - Initial instance setup endpoints
  * 
- * Handles the setup wizard flow for new MailFlow instances.
+ * Handles the setup wizard flow for new Mailflow instances.
  * These routes are accessible without authentication during setup.
  */
 

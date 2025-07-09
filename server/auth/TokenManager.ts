@@ -2,7 +2,7 @@
  * Token Manager - JWT token generation and validation
  * 
  * Handles JWT token creation, validation, and refresh for secure
- * session management in the self-hosted MailFlow instance.
+ * session management in the self-hosted Mailflow instance.
  */
 
 import jwt from 'jsonwebtoken';

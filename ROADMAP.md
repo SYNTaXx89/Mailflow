@@ -1,8 +1,8 @@
-# MailFlow Development Roadmap 🗺️
+# Mailflow Development Roadmap 🗺️
 
 ## 🎯 Project Vision
 
-MailFlow aims to be a **self-hosted email client** that puts **privacy and security first**, following the n8n model of complete self-hosting with zero external dependencies for core functionality.
+Mailflow aims to be a **self-hosted email client** that puts **privacy and security first**, following the n8n model of complete self-hosting with zero external dependencies for core functionality.
 
 ---
 

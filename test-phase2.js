@@ -54,7 +54,7 @@ async function testPhase2() {
       email: 'admin@mailflow.test',
       password: 'SecurePass123!',
       confirmPassword: 'SecurePass123!',
-      instanceName: 'Test MailFlow Instance'
+      instanceName: 'Test Mailflow Instance'
     };
     
     const adminResponse = await fetch(`${baseUrl}/setup/admin`, {
@@ -77,7 +77,7 @@ async function testPhase2() {
     // Test 4: Configure instance
     console.log('\n4. Testing instance configuration...');
     const configData = {
-      instanceName: 'Test MailFlow Instance',
+      instanceName: 'Test Mailflow Instance',
       timezone: 'UTC',
       features: {
         multiUser: true,

@@ -1,5 +1,5 @@
 /**
- * Main App Component - MailFlow Email Client
+ * Main App Component - Mailflow Email Client
  * 
  * This is the root component that orchestrates the entire email client application.
  * Simplified to only show the main email interface.

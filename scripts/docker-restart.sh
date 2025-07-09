@@ -1,5 +1,5 @@
 #!/bin/bash
-# MailFlow Docker Restart Script
+# Mailflow Docker Restart Script
 
 set -e
 
@@ -10,7 +10,7 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 # Change to project root directory
 cd "$PROJECT_ROOT"
 
-echo "🐳 Restarting MailFlow Docker Environment..."
+echo "🐳 Restarting Mailflow Docker Environment..."
 echo "📁 Working from: $(pwd)"
 
 # Function to show usage
@@ -104,11 +104,11 @@ cleanup() {
 trap cleanup EXIT
 
 # Main restart logic
-echo "🔄 Restarting MailFlow ($ENVIRONMENT)..."
+echo "🔄 Restarting Mailflow ($ENVIRONMENT)..."
 restart_services
 
 echo ""
-echo "✅ MailFlow ($ENVIRONMENT) restart completed!"
+echo "✅ Mailflow ($ENVIRONMENT) restart completed!"
 
 # Show environment-specific URLs
 case $ENVIRONMENT in

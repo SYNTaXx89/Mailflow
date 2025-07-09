@@ -1,6 +1,6 @@
 #!/bin/bash
-# MailFlow Docker Management Script
-# Advanced Docker operations for MailFlow
+# Mailflow Docker Management Script
+# Advanced Docker operations for Mailflow
 
 set -e
 
@@ -20,7 +20,7 @@ NC='\033[0m' # No Color
 
 # Function to show usage
 show_usage() {
-    echo "MailFlow Docker Management Script"
+    echo "Mailflow Docker Management Script"
     echo ""
     echo "Usage: $0 <command> [environment]"
     echo ""
@@ -98,7 +98,7 @@ if [ ! -f "$COMPOSE_FILE" ]; then
     exit 1
 fi
 
-echo -e "${BLUE}🐳 MailFlow Docker Management${NC}"
+echo -e "${BLUE}🐳 Mailflow Docker Management${NC}"
 echo -e "${BLUE}📁 Working from: $(pwd)${NC}"
 echo -e "${BLUE}📄 Using: $COMPOSE_FILE${NC}"
 echo -e "${BLUE}🎯 Environment: $ENV_NAME${NC}"

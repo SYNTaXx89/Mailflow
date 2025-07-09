@@ -1,4 +1,4 @@
-# Multi-stage build for MailFlow application
+# Multi-stage build for Mailflow application
 FROM node:18-alpine AS builder
 
 # Install Python and build dependencies for node-gyp

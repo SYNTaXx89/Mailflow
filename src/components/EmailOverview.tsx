@@ -26,9 +26,9 @@ const EmailOverview: React.FC<EmailOverviewProps> = ({ onNavigateWelcome }) => {
   const mockEmails = [
     {
       id: '1',
-      subject: 'Welcome to MailFlow!',
-      sender: 'MailFlow Team <team@mailflow.com>',
-      preview: 'Thank you for setting up your MailFlow instance...',
+      subject: 'Welcome to Mailflow!',
+      sender: 'Mailflow Team <team@mailflow.com>',
+      preview: 'Thank you for setting up your Mailflow instance...',
       date: new Date(),
       isRead: false
     },
@@ -36,7 +36,7 @@ const EmailOverview: React.FC<EmailOverviewProps> = ({ onNavigateWelcome }) => {
       id: '2', 
       subject: 'Getting Started Guide',
       sender: 'Support <support@mailflow.com>',
-      preview: 'Here are some tips to get the most out of MailFlow...',
+      preview: 'Here are some tips to get the most out of Mailflow...',
       date: new Date(Date.now() - 86400000),
       isRead: true
     }
@@ -73,7 +73,7 @@ const EmailOverview: React.FC<EmailOverviewProps> = ({ onNavigateWelcome }) => {
               <div className="w-8 h-8 bg-gradient-to-br from-teal-600 to-purple-600 rounded-lg flex items-center justify-center">
                 <Mail className="w-5 h-5 text-white" />
               </div>
-              <h1 className="text-xl font-bold text-white">MailFlow</h1>
+              <h1 className="text-xl font-bold text-white">Mailflow</h1>
             </div>
             <div className="flex items-center space-x-2">
               <button
@@ -192,7 +192,7 @@ const EmailOverview: React.FC<EmailOverviewProps> = ({ onNavigateWelcome }) => {
                 </div>
               </div>
               <div className="text-gray-300 leading-relaxed">
-                <p>Welcome to your MailFlow self-hosted email client!</p>
+                <p>Welcome to your Mailflow self-hosted email client!</p>
                 <br />
                 <p>This is a demonstration of the email viewing interface. In the full implementation, this would show the actual email content loaded from your IMAP server.</p>
                 <br />

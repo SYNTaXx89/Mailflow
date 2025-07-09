@@ -338,7 +338,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             </h3>
             <div className="space-y-4">
               <div className="text-sm text-gray-400 mb-4">
-                Sign out of your MailFlow account. You will need to enter your password again to access the application.
+                Sign out of your Mailflow account. You will need to enter your password again to access the application.
               </div>
               <button
                 onClick={() => {

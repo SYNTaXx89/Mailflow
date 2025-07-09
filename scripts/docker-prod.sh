@@ -1,9 +1,9 @@
 #!/bin/bash
-# MailFlow Production Docker Script
+# Mailflow Production Docker Script
 
 set -e
 
-echo "🐳 Starting MailFlow Production Environment..."
+echo "🐳 Starting Mailflow Production Environment..."
 
 # Create production data directory if it doesn't exist
 mkdir -p ./mailflow-data
@@ -12,7 +12,7 @@ mkdir -p ./mailflow-data
 docker-compose up --build -d
 
 echo "✅ Production environment started!"
-echo "📧 MailFlow: http://localhost:3000"
+echo "📧 Mailflow: http://localhost:3000"
 echo "🔧 Setup Wizard: http://localhost:3000 (if not configured)"
 echo "📊 Logs: docker-compose logs -f mailflow"
 echo "🛑 Stop: docker-compose down"

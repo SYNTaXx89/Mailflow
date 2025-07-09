@@ -31,7 +31,7 @@ function getApiBaseUrl(): string {
  */
 export const apiConfig = {
   baseUrl: getApiBaseUrl(),
-  appName: import.meta.env.VITE_APP_NAME || 'MailFlow',
+  appName: import.meta.env.VITE_APP_NAME || 'Mailflow',
   appVersion: import.meta.env.VITE_APP_VERSION || '1.0.0',
   
   // Computed URLs

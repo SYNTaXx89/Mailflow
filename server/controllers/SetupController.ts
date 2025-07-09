@@ -2,7 +2,7 @@
  * Setup Controller - Initial instance setup management
  * 
  * Handles setup wizard flow, admin account creation, and instance
- * initialization for self-hosted MailFlow instances.
+ * initialization for self-hosted Mailflow instances.
  */
 
 import crypto from 'crypto';
@@ -303,7 +303,7 @@ export class SetupController {
 
       res.json({
         success: true,
-        message: 'Setup completed successfully! Welcome to MailFlow.',
+        message: 'Setup completed successfully! Welcome to Mailflow.',
         config: finalConfig,
         redirectTo: '/login'
       });

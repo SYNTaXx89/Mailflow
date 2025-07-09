@@ -1,4 +1,4 @@
-# MailFlow - Development Dockerfile
+# Mailflow - Development Dockerfile
 # For development with hot-reload and debugging
 
 FROM node:18-alpine

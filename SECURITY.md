@@ -1,8 +1,8 @@
-# MailFlow Security Documentation
+# Mailflow Security Documentation
 
 ## 🔒 Security Overview
 
-MailFlow implements a comprehensive security architecture designed to protect user data, email credentials, and ensure proper access control. This document provides a detailed analysis of the security implementation, current vulnerabilities, and recommendations.
+Mailflow implements a comprehensive security architecture designed to protect user data, email credentials, and ensure proper access control. This document provides a detailed analysis of the security implementation, current vulnerabilities, and recommendations.
 
 ## 🛡️ Security Architecture
 

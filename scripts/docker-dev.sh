@@ -1,9 +1,9 @@
 #!/bin/bash
-# MailFlow Development Docker Script
+# Mailflow Development Docker Script
 
 set -e
 
-echo "🐳 Starting MailFlow Development Environment..."
+echo "🐳 Starting Mailflow Development Environment..."
 
 # Get the script directory and navigate to project root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

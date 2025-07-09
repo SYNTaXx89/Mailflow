@@ -148,7 +148,7 @@ const ConfigStep: React.FC<ConfigStepProps> = ({ setupData, adminToken, onNext, 
           <Settings className="w-8 h-8 text-white" />
         </div>
         <h1 className="text-2xl font-bold text-white mb-2">Configure Instance</h1>
-        <p className="text-gray-400">Customize your MailFlow instance settings and features</p>
+        <p className="text-gray-400">Customize your Mailflow instance settings and features</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
@@ -171,7 +171,7 @@ const ConfigStep: React.FC<ConfigStepProps> = ({ setupData, adminToken, onNext, 
                 className={`w-full px-4 py-3 bg-gray-700/50 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all ${
                   errors.instanceName ? 'border-red-500' : 'border-gray-600'
                 }`}
-                placeholder="My MailFlow Instance"
+                placeholder="My Mailflow Instance"
                 disabled={isLoading}
               />
               {errors.instanceName && (

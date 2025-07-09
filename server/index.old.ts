@@ -1,5 +1,5 @@
 /**
- * Express Server for MailFlow
+ * Express Server for Mailflow
  * 
  * Serves the React frontend and provides IMAP API endpoints.
  * In production, serves static files from /dist
@@ -398,7 +398,7 @@ app.use((error: Error, _req: express.Request, res: express.Response, _next: expr
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 MailFlow server running on port ${PORT}`);
+  console.log(`🚀 Mailflow server running on port ${PORT}`);
   console.log(`📧 IMAP API available at http://localhost:${PORT}/api`);
   
   if (isDevelopment) {

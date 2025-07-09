@@ -1,7 +1,7 @@
 /**
  * JWT Authentication Hook
  * 
- * Provides JWT-based authentication state management for MailFlow.
+ * Provides JWT-based authentication state management for Mailflow.
  * Handles token storage, validation, refresh, and user state.
  */
 

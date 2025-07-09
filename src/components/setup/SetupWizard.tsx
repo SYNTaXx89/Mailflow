@@ -2,7 +2,7 @@
  * Setup Wizard - n8n-style initial setup flow
  * 
  * Guides users through the initial setup process for self-hosted
- * MailFlow instances including admin account creation and configuration.
+ * Mailflow instances including admin account creation and configuration.
  */
 
 import React, { useState, useEffect } from 'react';
@@ -59,10 +59,10 @@ const SetupWizard: React.FC = () => {
       email: '',
       password: '',
       confirmPassword: '',
-      instanceName: 'My MailFlow Instance'
+      instanceName: 'My Mailflow Instance'
     },
     config: {
-      instanceName: 'My MailFlow Instance',
+      instanceName: 'My Mailflow Instance',
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
       features: {
         multiUser: true,
@@ -213,7 +213,7 @@ const SetupWizard: React.FC = () => {
           <div className="w-16 h-16 bg-gradient-to-br from-teal-600 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
             <Loader2 className="w-8 h-8 text-white animate-spin" />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Initializing MailFlow</h1>
+          <h1 className="text-2xl font-bold text-white mb-2">Initializing Mailflow</h1>
           <p className="text-gray-400">Checking setup status...</p>
         </div>
       </div>

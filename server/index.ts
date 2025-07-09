@@ -1,5 +1,5 @@
 /**
- * Express Server for MailFlow
+ * Express Server for Mailflow
  * 
  * Serves the React frontend and provides IMAP API endpoints.
  * In production, serves static files from /dist
@@ -34,7 +34,7 @@ const isDevelopment = process.env.NODE_ENV !== 'production';
 // Initialize configuration and database
 async function initializeApp() {
   try {
-    console.log('🚀 Initializing MailFlow server...');
+    console.log('🚀 Initializing Mailflow server...');
     
     // Initialize configuration manager
     await configManager.initialize();
@@ -42,9 +42,9 @@ async function initializeApp() {
     // Initialize database
     await databaseManager.initialize();
     
-    console.log('✅ MailFlow server initialization complete');
+    console.log('✅ Mailflow server initialization complete');
   } catch (error) {
-    console.error('❌ Failed to initialize MailFlow server:', error);
+    console.error('❌ Failed to initialize Mailflow server:', error);
     process.exit(1);
   }
 }
@@ -116,7 +116,7 @@ async function startServer() {
   await initializeApp();
   
   app.listen(PORT, () => {
-    console.log(`🚀 MailFlow server running on port ${PORT}`);
+    console.log(`🚀 Mailflow server running on port ${PORT}`);
     console.log(`📧 IMAP/SMTP API available at http://localhost:${PORT}/api`);
     
     // Check if setup is completed

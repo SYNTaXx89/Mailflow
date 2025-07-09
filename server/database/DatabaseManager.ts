@@ -2,7 +2,7 @@
  * DatabaseManager - SQLite database operations
  * 
  * Handles database initialization, migrations, and basic CRUD operations
- * for the self-hosted MailFlow instance.
+ * for the self-hosted Mailflow instance.
  */
 
 import sqlite3 from 'sqlite3';

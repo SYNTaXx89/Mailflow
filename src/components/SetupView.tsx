@@ -62,7 +62,7 @@ const SetupView: React.FC<SetupViewProps> = ({
             <div className="w-16 h-16 bg-gradient-to-br from-teal-600 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
               <Mail className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-white mb-2">Welcome to MailFlow</h1>
+            <h1 className="text-2xl font-bold text-white mb-2">Welcome to Mailflow</h1>
             <p className="text-gray-400">Set up your secure email client</p>
           </div>
           

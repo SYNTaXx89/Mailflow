@@ -1,4 +1,4 @@
-# MailFlow - Testing Docker Compose
+# Mailflow - Testing Docker Compose
 # For running tests in isolated environment
 
 version: '3.8'
@@ -17,7 +17,7 @@ services:
       - CI=true
     command: |
       sh -c "
-        echo '🧪 Running MailFlow Tests...' &&
+        echo '🧪 Running Mailflow Tests...' &&
         echo '📦 Installing test dependencies...' &&
         npm ci &&
         echo '🏗️  Building application...' &&

@@ -1,14 +1,14 @@
-# MailFlow E2E Test Plan
+# Mailflow E2E Test Plan
 
 ## 📋 Overview
 
-This document provides comprehensive end-to-end test scenarios for MailFlow, designed for both manual testing and automated test script generation. Each test includes preconditions, steps, expected results, and security validation points.
+This document provides comprehensive end-to-end test scenarios for Mailflow, designed for both manual testing and automated test script generation. Each test includes preconditions, steps, expected results, and security validation points.
 
 ## 🎯 Test Environment Setup
 
 ### Prerequisites
 - Docker and Docker Compose installed
-- MailFlow instance running (development or production)
+- Mailflow instance running (development or production)
 - Network access to test email providers (optional for full E2E)
 - Test credentials for email accounts (Gmail App Passwords, etc.)
 
@@ -24,7 +24,7 @@ This document provides comprehensive end-to-end test scenarios for MailFlow, des
 **Objective**: Verify all protected endpoints reject unauthenticated requests
 
 **Test Steps**:
-1. Start MailFlow instance
+1. Start Mailflow instance
 2. Make GET request to `/api/accounts` without Authorization header
 3. Make GET request to `/api/emails` without Authorization header  
 4. Make GET request to `/api/settings` without Authorization header
@@ -91,10 +91,10 @@ curl -s -H "Authorization: Bearer $USER_B_TOKEN" \
 ### SETUP-001: Initial Setup Wizard
 **Objective**: Complete initial setup from fresh instance
 
-**Prerequisites**: Fresh MailFlow instance (no setup completed)
+**Prerequisites**: Fresh Mailflow instance (no setup completed)
 
 **Test Steps**:
-1. Access MailFlow frontend
+1. Access Mailflow frontend
 2. Verify setup wizard appears
 3. Navigate through setup steps:
    - Welcome screen
@@ -124,7 +124,7 @@ curl -s -H "Authorization: Bearer $USER_B_TOKEN" \
 **Prerequisites**: Setup completed with admin account
 
 **Test Steps**:
-1. Access MailFlow login page
+1. Access Mailflow login page
 2. Enter admin credentials
 3. Submit login form
 4. Verify JWT tokens received
@@ -537,12 +537,12 @@ echo $EXPORT_DATA | jq -e '.timestamp' # Should exist
 ### Automated Security Test Script
 ```bash
 #!/bin/bash
-# MailFlow Security Test Suite
+# Mailflow Security Test Suite
 
 BASE_URL="http://localhost:3001"
 RESULTS_FILE="security_test_results.json"
 
-echo "Running MailFlow Security Tests..."
+echo "Running Mailflow Security Tests..."
 
 # Test 1: Unauthenticated access prevention
 echo "Testing unauthenticated access..."
@@ -659,4 +659,4 @@ echo "Security tests completed!"
 
 **Test Plan Version**: 1.0  
 **Last Updated**: July 6, 2025  
-**Compatible with**: MailFlow v1.0+ (Security Update)
+**Compatible with**: Mailflow v1.0+ (Security Update)

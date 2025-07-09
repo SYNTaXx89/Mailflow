@@ -8,7 +8,7 @@ async function testAuth() {
   const baseUrl = 'http://localhost:3001/api';
   
   try {
-    console.log('🧪 Testing MailFlow Authentication System...\n');
+    console.log('🧪 Testing Mailflow Authentication System...\n');
     
     // Test 1: Health check
     console.log('1. Testing health endpoint...');

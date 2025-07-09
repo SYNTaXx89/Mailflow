@@ -2,7 +2,7 @@
  * Types Index - Central Type Export File
  * 
  * This file provides a central location for exporting all TypeScript types and interfaces
- * used throughout the MailFlow email client application.
+ * used throughout the Mailflow email client application.
  * 
  * Types are organized by category:
  * - Core Data Types: Account, Email, etc.

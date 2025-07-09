@@ -151,7 +151,7 @@ const AdminStep: React.FC<AdminStepProps> = ({ setupData, onNext, onError }) => 
           <User className="w-8 h-8 text-white" />
         </div>
         <h1 className="text-2xl font-bold text-white mb-2">Create Admin Account</h1>
-        <p className="text-gray-400">Set up your administrator account to manage this MailFlow instance</p>
+        <p className="text-gray-400">Set up your administrator account to manage this Mailflow instance</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -169,7 +169,7 @@ const AdminStep: React.FC<AdminStepProps> = ({ setupData, onNext, onError }) => 
               className={`w-full pl-10 pr-4 py-3 bg-gray-700/50 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all ${
                 errors.instanceName ? 'border-red-500' : 'border-gray-600'
               }`}
-              placeholder="My MailFlow Instance"
+              placeholder="My Mailflow Instance"
               disabled={isLoading}
             />
           </div>

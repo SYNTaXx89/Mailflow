@@ -44,7 +44,7 @@ const LoginView: React.FC = () => {
               <Mail className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-white mb-2">Welcome Back</h1>
-            <p className="text-gray-400">Sign in to your MailFlow account</p>
+            <p className="text-gray-400">Sign in to your Mailflow account</p>
           </div>
           
           <form onSubmit={handleSubmit} className="space-y-6">

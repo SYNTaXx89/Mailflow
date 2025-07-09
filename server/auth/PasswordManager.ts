@@ -2,7 +2,7 @@
  * Password Manager - Secure password hashing and validation
  * 
  * Handles password hashing, validation, and secure comparison
- * using bcrypt for the self-hosted MailFlow instance.
+ * using bcrypt for the self-hosted Mailflow instance.
  */
 
 import bcrypt from 'bcrypt';

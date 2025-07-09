@@ -1,9 +1,9 @@
 #!/bin/bash
-# MailFlow Testing Docker Script
+# Mailflow Testing Docker Script
 
 set -e
 
-echo "🧪 Running MailFlow Tests in Docker..."
+echo "🧪 Running Mailflow Tests in Docker..."
 
 # Run tests
 docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit
