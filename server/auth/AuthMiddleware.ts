@@ -203,7 +203,7 @@ export class AuthMiddleware {
         const dbManager = DatabaseManager.getInstance();
 
         // Get account and verify ownership
-        const account = await dbManager.getAccount(accountId);
+        const account = await dbManager.getAccountById(accountId);
         if (!account) {
           res.status(404).json({
             success: false,
