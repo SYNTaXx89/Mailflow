@@ -1,0 +1,42 @@
+# MailFlow - Development Dockerfile
+# For development with hot-reload and debugging
+
+FROM node:18-alpine
+
+# Install development tools
+RUN apk add --no-cache \
+    git \
+    python3 \
+    make \
+    g++
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY server/tsconfig.json ./server/
+COPY tsconfig.json ./
+COPY tsconfig.node.json ./
+COPY vite.config.ts ./
+
+# Install all dependencies (including dev)
+RUN npm ci
+
+# Rebuild native modules for the container architecture
+RUN npm rebuild sqlite3
+
+# Copy source code (excluding node_modules via .dockerignore)
+COPY . .
+
+# Create development data directory
+RUN mkdir -p /app/.mailflow
+
+# Expose ports for both frontend and backend
+EXPOSE 3001 5173
+
+# Set development environment
+ENV NODE_ENV=development
+
+# Default command (can be overridden in docker-compose)
+CMD ["npm", "run", "dev"]

@@ -1,0 +1,43 @@
+# MailFlow - Development Docker Compose
+# For development with hot-reload and debugging
+
+version: '3.8'
+
+services:
+  mailflow-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: mailflow-dev
+    ports:
+      - "3001:3001"  # Backend API
+      - "5173:5173"  # Frontend dev server
+    volumes:
+      # Mount source code for hot-reload
+      - ./src:/app/src:ro
+      - ./server:/app/server:ro
+      - ./public:/app/public:ro
+      - ./index.html:/app/index.html:ro
+      - ./vite.config.ts:/app/vite.config.ts:ro
+      - ./tsconfig.json:/app/tsconfig.json:ro
+      - ./tsconfig.node.json:/app/tsconfig.node.json:ro
+      - ./.env.development:/app/.env.development:ro
+      # Persistent data for development (bind mount to host directory)
+      - ./mailflow-dev-data:/app/data/.mailflow:rw
+      # Node modules (for performance)
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - MAILFLOW_DATA_DIR=/app/data/.mailflow
+      - VITE_API_BASE_URL=http://localhost:3001/api
+      - VITE_APP_NAME=MailFlow Dev
+      - VITE_APP_VERSION=1.0.0-dev
+    command: npm run dev
+    networks:
+      - mailflow-dev-network
+
+networks:
+  mailflow-dev-network:
+    driver: bridge
+
+# Named volumes removed - using bind mounts for development

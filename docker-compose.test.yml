@@ -1,0 +1,60 @@
+# MailFlow - Testing Docker Compose
+# For running tests in isolated environment
+
+version: '3.8'
+
+services:
+  mailflow-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder  # Use builder stage for testing
+    container_name: mailflow-test
+    volumes:
+      - ./test-results:/app/test-results:rw
+    environment:
+      - NODE_ENV=test
+      - CI=true
+    command: |
+      sh -c "
+        echo '🧪 Running MailFlow Tests...' &&
+        echo '📦 Installing test dependencies...' &&
+        npm ci &&
+        echo '🏗️  Building application...' &&
+        npm run build &&
+        echo '🔍 Running linting...' &&
+        npm run lint &&
+        echo '✅ All tests completed!'
+      "
+    networks:
+      - mailflow-test-network
+
+  # Test server for API testing
+  mailflow-test-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: mailflow-test-server
+    volumes:
+      - mailflow-test-data:/app/data/.mailflow:rw
+    environment:
+      - NODE_ENV=test
+      - MAILFLOW_DATA_DIR=/app/data/.mailflow
+    ports:
+      - "3002:3001"  # Different port to avoid conflicts
+    networks:
+      - mailflow-test-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+networks:
+  mailflow-test-network:
+    driver: bridge
+
+volumes:
+  mailflow-test-data:
+    driver: local
