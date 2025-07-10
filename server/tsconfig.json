@@ -29,6 +29,9 @@
     "../src/hooks/**/*",
     "../src/config/**/*",
     "../src/*.tsx",
-    "../src/*.ts"
+    "../src/*.ts",
+    "**/__tests__/**/*",
+    "**/*.test.ts",
+    "**/*.test.js"
   ]
 }
