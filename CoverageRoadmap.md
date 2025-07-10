@@ -7,14 +7,14 @@ This document outlines the comprehensive testing strategy for Mailflow, organize
 ### Authentication & Security Components
 
 #### `/server/auth/AuthMiddleware.ts` - JWT token validation middleware
-- [ ] JWT token validation with valid tokens
-- [ ] Expired token handling and error responses
-- [ ] Malformed token rejection
-- [ ] Missing token scenarios
-- [ ] Account ownership verification logic
-- [ ] Admin role bypass functionality
-- [ ] Error response consistency
-- [ ] Circular dependency prevention tests
+- [x] JWT token validation with valid tokens
+- [x] Expired token handling and error responses
+- [x] Malformed token rejection
+- [x] Missing token scenarios
+- [x] Account ownership verification logic
+- [x] Admin role bypass functionality
+- [x] Error response consistency
+- [x] Circular dependency prevention tests
 
 #### `/server/auth/TokenManager.ts` - JWT token generation and refresh
 - [x] Access token generation with correct payload
@@ -38,45 +38,43 @@ This document outlines the comprehensive testing strategy for Mailflow, organize
 ### Database & Data Integrity
 
 #### `/server/database/DatabaseManager.ts` - Core database operations
+**Note**: DatabaseManager now uses dependency injection with ConfigManager instead of singleton pattern.
 - [x] User CRUD operations
 - [x] Account CRUD operations
 - [x] Email CRUD operations
 - [x] Settings CRUD operations
 - [x] SQL injection prevention
 - [x] Database connection handling
-- [ ] Transaction management
-- [ ] Foreign key constraint validation
-- [ ] Data encryption/decryption
-- [ ] Migration system testing
+- [x] Constructor dependency injection with ConfigManager
+- [x] Instance-based methods instead of static methods
+- [x] Data encryption/decryption
+- [x] Database health status monitoring
+- [x] Connection management and cleanup
+- [x] Transaction management
+- [x] Foreign key constraint validation  
+- [x] Migration system testing
 
-#### `/src/storage/DatabaseStorage.ts` - Client-side database interface
-- [ ] API communication error handling
-- [ ] Data persistence validation
-- [ ] Network failure recovery
-- [ ] Authentication integration
-- [ ] Data serialization/deserialization
-- [ ] Cache invalidation logic
 
 ### Setup & Configuration
 
 #### `/server/controllers/SetupController.ts` - Initial setup logic
-- [ ] Setup status validation
-- [ ] Admin account creation
-- [ ] Configuration initialization
-- [ ] Setup completion workflow
-- [ ] Setup reset functionality (dev mode)
-- [ ] Production environment protection
-- [ ] Database initialization during setup
-- [ ] Error recovery mechanisms
+- [x] Setup status validation
+- [x] Admin account creation
+- [x] Configuration initialization
+- [x] Setup completion workflow
+- [x] Setup reset functionality (dev mode)
+- [x] Production environment protection
+- [x] Database initialization during setup
+- [x] Error recovery mechanisms
 
 #### `/server/config/ConfigManager.ts` - Configuration management
-- [ ] Configuration file loading
-- [ ] Environment variable handling
-- [ ] Configuration validation
-- [ ] Security settings verification
-- [ ] Configuration persistence
-- [ ] Default value handling
-- [ ] Configuration encryption
+- [x] Configuration file loading
+- [x] Environment variable handling
+- [x] Configuration validation
+- [x] Security settings verification
+- [x] Configuration persistence
+- [x] Default value handling
+- [x] Configuration encryption
 
 ## 🟡 HIGH PRIORITY (Core Features, Complex Logic)
 
@@ -104,14 +102,14 @@ This document outlines the comprehensive testing strategy for Mailflow, organize
 - [ ] Security headers implementation
 
 #### `/server/cache/EmailCacheService.ts` - Email caching system
-- [ ] Cache storage and retrieval
-- [ ] Cache invalidation strategies
-- [ ] Memory management
-- [ ] Data consistency checks
-- [ ] Cache cleanup operations
-- [ ] Performance metrics
-- [ ] Concurrent access handling
-- [ ] Cache statistics tracking
+- [x] Cache storage and retrieval
+- [x] Cache invalidation strategies
+- [x] Memory management
+- [x] Data consistency checks
+- [x] Cache cleanup operations
+- [x] Performance metrics
+- [x] Concurrent access handling
+- [x] Cache statistics tracking
 
 ### IMAP Integration
 
@@ -154,21 +152,21 @@ This document outlines the comprehensive testing strategy for Mailflow, organize
 ### API Routes (Backend)
 
 #### `/server/routes/auth.ts` - Authentication endpoints
-- [ ] Login endpoint validation
-- [ ] Logout functionality
-- [ ] Token refresh mechanism
-- [ ] Error response consistency
-- [ ] Rate limiting effectiveness
-- [ ] Security header implementation
-- [ ] Session management
+- [x] Login endpoint validation
+- [x] Logout functionality
+- [x] Token refresh mechanism
+- [x] Error response consistency
+- [x] Rate limiting effectiveness
+- [x] Security header implementation
+- [x] Session management
 
 #### `/server/routes/accounts.ts` - Account management endpoints
-- [ ] Account creation validation
-- [ ] Account retrieval with authorization
-- [ ] Account update operations
-- [ ] Account deletion with cleanup
-- [ ] User isolation verification
-- [ ] Input validation and sanitization
+- [x] Account creation validation
+- [x] Account retrieval with authorization
+- [x] Account update operations
+- [x] Account deletion with cleanup
+- [x] User isolation verification
+- [x] Input validation and sanitization
 
 #### `/server/routes/emails.ts` - Email operation endpoints
 - [ ] Email fetching with pagination

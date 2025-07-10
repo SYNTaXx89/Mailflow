@@ -306,7 +306,7 @@ export function createEmailsRouter(
     res.setHeader('Content-Security-Policy', "default-src 'none'");
     
     // Send the attachment buffer (use end() for binary data)
-    res.end(attachment.buffer);
+    res.status(200).end(attachment.buffer);
     
   } catch (error) {
     console.error('❌ Error getting attachment:', error);

@@ -18,14 +18,12 @@ import { AuthMiddleware } from './auth/AuthMiddleware';
 // Import route modules
 import { createSetupRouter } from './routes/setup';
 import { createAuthRouter } from './routes/auth';
-import { createImapRouter } from './routes/imap';
 import { createSmtpRouter } from './routes/smtp';
 import { createHealthRouter } from './routes/health';
 import { createAccountsRouter } from './routes/accounts';
 import { createEmailsRouter } from './routes/emails';
 import { createSettingsRouter } from './routes/settings';
 import { createExportRouter } from './routes/export';
-import { createCacheRouter } from './routes/cache';
 import { createIdleRouter } from './routes/idle';
 import { EmailCacheService } from './cache/EmailCacheService';
 // emailsV2Routes removed - now using smart routes as main emails routes
@@ -99,15 +97,13 @@ function setupApiRoutes() {
   // API Routes
   app.use('/api/setup', createSetupRouter(configManager, databaseManager, authMiddleware));
   app.use('/api/auth', createAuthRouter(databaseManager, tokenManager, authMiddleware));
-  app.use('/api/imap', createImapRouter(authMiddleware, emailCacheService));
   app.use('/api/smtp', createSmtpRouter(authMiddleware));
-  app.use('/api/cache', createCacheRouter(emailCacheService, authMiddleware));
   app.use('/api/health', createHealthRouter());
   app.use('/api/accounts', createAccountsRouter(databaseManager, authMiddleware));
   app.use('/api/emails', createEmailsRouter(databaseManager, emailCacheService, authMiddleware)); // Smart email API with EmailService
   app.use('/api/settings', createSettingsRouter(databaseManager, authMiddleware));
   app.use('/api/export', createExportRouter(databaseManager, authMiddleware));
-  app.use('/api/idle', createIdleRouter(databaseManager, emailCacheService)); // IMAP IDLE real-time connections
+  app.use('/api/idle', createIdleRouter(databaseManager, emailCacheService, authMiddleware)); // IMAP IDLE real-time connections
   app.use('/api', createExportRouter(databaseManager, authMiddleware)); // Also mount at /api for backward compatibility with /api/import
 }
 

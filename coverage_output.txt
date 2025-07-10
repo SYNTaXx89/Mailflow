@@ -1,0 +1,578 @@
+
+> mailflow@1.0.0 test:coverage
+> vitest run --coverage
+
+
+ RUN  v3.2.4 /Users/syntax/Desktop/Mailflow
+      Coverage enabled with v8
+
+ ❯ server/database/__tests__/DatabaseManager-advanced.test.ts (24 tests | 12 failed) 25ms
+   ✓ DatabaseManager - Advanced Features > Encryption and Decryption > should encrypt data using AES-256-CBC 3ms
+   ✓ DatabaseManager - Advanced Features > Encryption and Decryption > should decrypt data using AES-256-CBC 0ms
+   ✓ DatabaseManager - Advanced Features > Encryption and Decryption > should handle encryption/decryption round trip 0ms
+   ✓ DatabaseManager - Advanced Features > Encryption and Decryption > should generate unique IVs for each encryption 0ms
+   ✓ DatabaseManager - Advanced Features > Encryption and Decryption > should handle malformed encrypted data gracefully 0ms
+   × DatabaseManager - Advanced Features > Migration System > should detect and run migrations for emails table 5ms
+     → this.db.run is not a function
+   × DatabaseManager - Advanced Features > Migration System > should add missing full_body column if missing 1ms
+     → this.db.run is not a function
+   × DatabaseManager - Advanced Features > Migration System > should add missing has_attachments column if missing 1ms
+     → this.db.run is not a function
+   × DatabaseManager - Advanced Features > Migration System > should handle migration errors gracefully 7ms
+     → expected [Function] to throw error including 'PRAGMA table_info failed' but got 'this.db.run is not a function'
+   × DatabaseManager - Advanced Features > Migration System > should skip migrations when table structure is current 0ms
+     → this.db.run is not a function
+   × DatabaseManager - Advanced Features > Foreign Key Constraints > should enable foreign key constraints during initialization 0ms
+     → this.db.run is not a function
+   × DatabaseManager - Advanced Features > Foreign Key Constraints > should create tables with proper foreign key relationships 0ms
+     → this.db.run is not a function
+   × DatabaseManager - Advanced Features > Foreign Key Constraints > should enforce CASCADE deletion in foreign keys 0ms
+     → this.db.run is not a function
+   × DatabaseManager - Advanced Features > Encryption Key Management > should generate new encryption key when file does not exist 1ms
+     → this.db.run is not a function
+   × DatabaseManager - Advanced Features > Encryption Key Management > should load existing encryption key when file exists 1ms
+     → this.db.run is not a function
+   × DatabaseManager - Advanced Features > Encryption Key Management > should create credentials directory if it does not exist 0ms
+     → this.db.run is not a function
+   ✓ DatabaseManager - Advanced Features > Database Health and Connection Management > should report healthy status when database is accessible 1ms
+   ✓ DatabaseManager - Advanced Features > Database Health and Connection Management > should report unhealthy status when database is inaccessible 1ms
+   ✓ DatabaseManager - Advanced Features > Database Health and Connection Management > should close database connection properly 0ms
+   ✓ DatabaseManager - Advanced Features > Database Health and Connection Management > should handle close errors gracefully 0ms
+   ✓ DatabaseManager - Advanced Features > Database Initialization Error Handling > should handle database connection errors 1ms
+   ✓ DatabaseManager - Advanced Features > Database Initialization Error Handling > should handle directory creation errors 0ms
+   ✓ DatabaseManager - Advanced Features > Database Initialization Error Handling > should handle encryption key generation errors 0ms
+   × DatabaseManager - Advanced Features > Performance Indexes > should create performance indexes during initialization 0ms
+     → this.db.run is not a function
+ ✓ server/routes/__tests__/settings.integration.test.ts (21 tests) 73ms
+ ✓ server/routes/__tests__/accounts.integration.test.ts (22 tests) 89ms
+ ❯ server/routes/__tests__/setup.integration.test.ts (22 tests | 15 failed) 98ms
+   ✓ Setup Routes Integration Tests > GET /setup/status > should return setup needed when setup is not complete 12ms
+   ✓ Setup Routes Integration Tests > GET /setup/status > should return setup complete when setup is finished 2ms
+   ✓ Setup Routes Integration Tests > GET /setup/status > should handle errors gracefully 3ms
+   ✓ Setup Routes Integration Tests > POST /setup/initialize > should initialize setup successfully 3ms
+   ✓ Setup Routes Integration Tests > POST /setup/initialize > should return 400 if setup is already complete 7ms
+   ✓ Setup Routes Integration Tests > POST /setup/initialize > should handle database initialization errors 1ms
+   × Setup Routes Integration Tests > POST /setup/admin > should create admin account successfully 9ms
+     → expected 500 to be 200 // Object.is equality
+   × Setup Routes Integration Tests > POST /setup/admin > should return 400 for missing required fields 4ms
+     → expected 500 to be 400 // Object.is equality
+   × Setup Routes Integration Tests > POST /setup/admin > should return 400 for password mismatch 2ms
+     → expected 500 to be 400 // Object.is equality
+   × Setup Routes Integration Tests > POST /setup/admin > should return 400 for weak password 2ms
+     → expected 500 to be 400 // Object.is equality
+   × Setup Routes Integration Tests > POST /setup/admin > should return 400 if admin already exists 5ms
+     → expected 500 to be 400 // Object.is equality
+   × Setup Routes Integration Tests > POST /setup/admin > should return 400 if setup is already complete 4ms
+     → expected 500 to be 400 // Object.is equality
+   × Setup Routes Integration Tests > POST /setup/configure > should configure instance with valid settings 2ms
+     → expected 400 to be 200 // Object.is equality
+   × Setup Routes Integration Tests > POST /setup/configure > should require admin authentication 5ms
+     → expected 400 to be 200 // Object.is equality
+   ✓ Setup Routes Integration Tests > POST /setup/configure > should return 403 for non-admin users 2ms
+   × Setup Routes Integration Tests > POST /setup/complete > should complete setup successfully 3ms
+     → expected 500 to be 200 // Object.is equality
+   × Setup Routes Integration Tests > POST /setup/complete > should return 400 if setup is already complete 6ms
+     → expected 500 to be 400 // Object.is equality
+   × Setup Routes Integration Tests > POST /setup/complete > should return 500 if database is unhealthy 10ms
+     → expected { …(2) } to match object { Object (error) }
+(1 matching property omitted from actual)
+   × Setup Routes Integration Tests > POST /setup/reset > should reset setup in development mode 2ms
+     → expected 500 to be 200 // Object.is equality
+   × Setup Routes Integration Tests > POST /setup/reset > should require admin auth in production mode 3ms
+     → expected 403 to be 200 // Object.is equality
+   × Setup Routes Integration Tests > POST /setup/reset > should handle reset errors 4ms
+     → expected 403 to be 500 // Object.is equality
+   × Setup Routes Integration Tests > Setup Flow Integration > should enforce proper setup sequence 5ms
+     → expected undefined to be true // Object.is equality
+ ✓ server/routes/__tests__/auth.integration.test.ts (25 tests) 160ms
+ ✓ server/services/__tests__/EmailService.test.ts (38 tests) 88ms
+ ✓ server/routes/__tests__/emails.integration.test.ts (27 tests | 1 skipped) 202ms
+ ✓ server/routes/__tests__/health.integration.test.ts (8 tests) 49ms
+ ✓ server/auth/__tests__/TokenManager.test.ts (34 tests) 12ms
+ ✓ server/database/__tests__/DatabaseManager.test.ts (42 tests) 15ms
+ ✓ server/auth/__tests__/PasswordManager.test.ts (35 tests) 15ms
+ ✓ server/config/__tests__/ConfigManager.test.ts (29 tests) 8ms
+ ✓ server/cache/__tests__/EmailCacheService.test.ts (38 tests) 35ms
+ ✓ server/database/__tests__/DatabaseManager-simple.test.ts (13 tests) 31ms
+ ✓ server/database/__tests__/DatabaseManager-transactions.test.ts (13 tests) 7ms
+ ✓ server/controllers/__tests__/SetupController.test.ts (12 tests) 8ms
+ ✓ server/auth/__tests__/AuthMiddleware.test.ts (20 tests) 6ms
+ ✓ server/database/__tests__/DatabaseManager-basic.test.ts (3 tests) 3ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 27 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  server/database/__tests__/DatabaseManager-advanced.test.ts > DatabaseManager - Advanced Features > Migration System > should detect and run migrations for emails table
+TypeError: this.db.run is not a function
+ ❯ server/database/DatabaseManager.ts:303:15
+    301|       }
+    302| 
+    303|       this.db.run(sql, params, function(err) {
+       |               ^
+    304|         if (err) {
+    305|           reject(err);
+ ❯ DatabaseManager.run server/database/DatabaseManager.ts:297:12
+ ❯ DatabaseManager.initialize server/database/DatabaseManager.ts:98:18
+ ❯ server/database/__tests__/DatabaseManager-advanced.test.ts:213:29
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/27]⎯
+
+ FAIL  server/database/__tests__/DatabaseManager-advanced.test.ts > DatabaseManager - Advanced Features > Migration System > should add missing full_body column if missing
+TypeError: this.db.run is not a function
+ ❯ server/database/DatabaseManager.ts:303:15
+    301|       }
+    302| 
+    303|       this.db.run(sql, params, function(err) {
+       |               ^
+    304|         if (err) {
+    305|           reject(err);
+ ❯ DatabaseManager.run server/database/DatabaseManager.ts:297:12
+ ❯ DatabaseManager.initialize server/database/DatabaseManager.ts:98:18
+ ❯ server/database/__tests__/DatabaseManager-advanced.test.ts:241:29
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/27]⎯
+
+ FAIL  server/database/__tests__/DatabaseManager-advanced.test.ts > DatabaseManager - Advanced Features > Migration System > should add missing has_attachments column if missing
+TypeError: this.db.run is not a function
+ ❯ server/database/DatabaseManager.ts:303:15
+    301|       }
+    302| 
+    303|       this.db.run(sql, params, function(err) {
+       |               ^
+    304|         if (err) {
+    305|           reject(err);
+ ❯ DatabaseManager.run server/database/DatabaseManager.ts:297:12
+ ❯ DatabaseManager.initialize server/database/DatabaseManager.ts:98:18
+ ❯ server/database/__tests__/DatabaseManager-advanced.test.ts:264:29
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/27]⎯
+
+ FAIL  server/database/__tests__/DatabaseManager-advanced.test.ts > DatabaseManager - Advanced Features > Migration System > should handle migration errors gracefully
+AssertionError: expected [Function] to throw error including 'PRAGMA table_info failed' but got 'this.db.run is not a function'
+
+Expected: [32m"PRAGMA table_info failed"[39m
+Received: [31m"this.db.run is not a function"[39m
+
+ ❯ server/database/__tests__/DatabaseManager-advanced.test.ts:280:7
+    278| 
+    279|       // Act & Assert
+    280|       await expect(databaseManager.initialize()).rejects.toThrow('PRAG…
+       |       ^
+    281|     })
+    282| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/27]⎯
+
+ FAIL  server/database/__tests__/DatabaseManager-advanced.test.ts > DatabaseManager - Advanced Features > Migration System > should skip migrations when table structure is current
+TypeError: this.db.run is not a function
+ ❯ server/database/DatabaseManager.ts:303:15
+    301|       }
+    302| 
+    303|       this.db.run(sql, params, function(err) {
+       |               ^
+    304|         if (err) {
+    305|           reject(err);
+ ❯ DatabaseManager.run server/database/DatabaseManager.ts:297:12
+ ❯ DatabaseManager.initialize server/database/DatabaseManager.ts:98:18
+ ❯ server/database/__tests__/DatabaseManager-advanced.test.ts:295:29
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/27]⎯
+
+ FAIL  server/database/__tests__/DatabaseManager-advanced.test.ts > DatabaseManager - Advanced Features > Foreign Key Constraints > should enable foreign key constraints during initialization
+TypeError: this.db.run is not a function
+ ❯ server/database/DatabaseManager.ts:303:15
+    301|       }
+    302| 
+    303|       this.db.run(sql, params, function(err) {
+       |               ^
+    304|         if (err) {
+    305|           reject(err);
+ ❯ DatabaseManager.run server/database/DatabaseManager.ts:297:12
+ ❯ DatabaseManager.initialize server/database/DatabaseManager.ts:98:18
+ ❯ server/database/__tests__/DatabaseManager-advanced.test.ts:327:29
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/27]⎯
+
+ FAIL  server/database/__tests__/DatabaseManager-advanced.test.ts > DatabaseManager - Advanced Features > Foreign Key Constraints > should create tables with proper foreign key relationships
+TypeError: this.db.run is not a function
+ ❯ server/database/DatabaseManager.ts:303:15
+    301|       }
+    302| 
+    303|       this.db.run(sql, params, function(err) {
+       |               ^
+    304|         if (err) {
+    305|           reject(err);
+ ❯ DatabaseManager.run server/database/DatabaseManager.ts:297:12
+ ❯ DatabaseManager.initialize server/database/DatabaseManager.ts:98:18
+ ❯ server/database/__tests__/DatabaseManager-advanced.test.ts:339:29
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/27]⎯
+
+ FAIL  server/database/__tests__/DatabaseManager-advanced.test.ts > DatabaseManager - Advanced Features > Foreign Key Constraints > should enforce CASCADE deletion in foreign keys
+TypeError: this.db.run is not a function
+ ❯ server/database/DatabaseManager.ts:303:15
+    301|       }
+    302| 
+    303|       this.db.run(sql, params, function(err) {
+       |               ^
+    304|         if (err) {
+    305|           reject(err);
+ ❯ DatabaseManager.run server/database/DatabaseManager.ts:297:12
+ ❯ DatabaseManager.initialize server/database/DatabaseManager.ts:98:18
+ ❯ server/database/__tests__/DatabaseManager-advanced.test.ts:367:29
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/27]⎯
+
+ FAIL  server/database/__tests__/DatabaseManager-advanced.test.ts > DatabaseManager - Advanced Features > Encryption Key Management > should generate new encryption key when file does not exist
+TypeError: this.db.run is not a function
+ ❯ server/database/DatabaseManager.ts:303:15
+    301|       }
+    302| 
+    303|       this.db.run(sql, params, function(err) {
+       |               ^
+    304|         if (err) {
+    305|           reject(err);
+ ❯ DatabaseManager.run server/database/DatabaseManager.ts:297:12
+ ❯ DatabaseManager.initialize server/database/DatabaseManager.ts:98:18
+ ❯ server/database/__tests__/DatabaseManager-advanced.test.ts:390:29
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/27]⎯
+
+ FAIL  server/database/__tests__/DatabaseManager-advanced.test.ts > DatabaseManager - Advanced Features > Encryption Key Management > should load existing encryption key when file exists
+TypeError: this.db.run is not a function
+ ❯ server/database/DatabaseManager.ts:303:15
+    301|       }
+    302| 
+    303|       this.db.run(sql, params, function(err) {
+       |               ^
+    304|         if (err) {
+    305|           reject(err);
+ ❯ DatabaseManager.run server/database/DatabaseManager.ts:297:12
+ ❯ DatabaseManager.initialize server/database/DatabaseManager.ts:98:18
+ ❯ server/database/__tests__/DatabaseManager-advanced.test.ts:406:29
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/27]⎯
+
+ FAIL  server/database/__tests__/DatabaseManager-advanced.test.ts > DatabaseManager - Advanced Features > Encryption Key Management > should create credentials directory if it does not exist
+TypeError: this.db.run is not a function
+ ❯ server/database/DatabaseManager.ts:303:15
+    301|       }
+    302| 
+    303|       this.db.run(sql, params, function(err) {
+       |               ^
+    304|         if (err) {
+    305|           reject(err);
+ ❯ DatabaseManager.run server/database/DatabaseManager.ts:297:12
+ ❯ DatabaseManager.initialize server/database/DatabaseManager.ts:98:18
+ ❯ server/database/__tests__/DatabaseManager-advanced.test.ts:424:29
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/27]⎯
+
+ FAIL  server/database/__tests__/DatabaseManager-advanced.test.ts > DatabaseManager - Advanced Features > Performance Indexes > should create performance indexes during initialization
+TypeError: this.db.run is not a function
+ ❯ server/database/DatabaseManager.ts:303:15
+    301|       }
+    302| 
+    303|       this.db.run(sql, params, function(err) {
+       |               ^
+    304|         if (err) {
+    305|           reject(err);
+ ❯ DatabaseManager.run server/database/DatabaseManager.ts:297:12
+ ❯ DatabaseManager.initialize server/database/DatabaseManager.ts:98:18
+ ❯ server/database/__tests__/DatabaseManager-advanced.test.ts:567:29
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/27]⎯
+
+ FAIL  server/routes/__tests__/setup.integration.test.ts > Setup Routes Integration Tests > POST /setup/admin > should create admin account successfully
+AssertionError: expected 500 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 500[39m
+
+ ❯ server/routes/__tests__/setup.integration.test.ts:216:31
+    214| 
+    215|       // Assert
+    216|       expect(response.status).toBe(200)
+       |                               ^
+    217|       expect(response.body).toMatchObject({
+    218|         success: true,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/27]⎯
+
+ FAIL  server/routes/__tests__/setup.integration.test.ts > Setup Routes Integration Tests > POST /setup/admin > should return 400 for missing required fields
+AssertionError: expected 500 to be 400 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 400[39m
+[31m+ 500[39m
+
+ ❯ server/routes/__tests__/setup.integration.test.ts:240:31
+    238| 
+    239|       // Assert
+    240|       expect(response.status).toBe(400)
+       |                               ^
+    241|       expect(response.body).toMatchObject({
+    242|         error: 'Missing required fields'
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/27]⎯
+
+ FAIL  server/routes/__tests__/setup.integration.test.ts > Setup Routes Integration Tests > POST /setup/admin > should return 400 for password mismatch
+AssertionError: expected 500 to be 400 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 400[39m
+[31m+ 500[39m
+
+ ❯ server/routes/__tests__/setup.integration.test.ts:257:31
+    255| 
+    256|       // Assert
+    257|       expect(response.status).toBe(400)
+       |                               ^
+    258|       expect(response.body).toMatchObject({
+    259|         error: 'Passwords do not match'
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/27]⎯
+
+ FAIL  server/routes/__tests__/setup.integration.test.ts > Setup Routes Integration Tests > POST /setup/admin > should return 400 for weak password
+AssertionError: expected 500 to be 400 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 400[39m
+[31m+ 500[39m
+
+ ❯ server/routes/__tests__/setup.integration.test.ts:274:31
+    272| 
+    273|       // Assert
+    274|       expect(response.status).toBe(400)
+       |                               ^
+    275|       expect(response.body).toHaveProperty('error')
+    276|       expect(response.body.error).toContain('Password')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/27]⎯
+
+ FAIL  server/routes/__tests__/setup.integration.test.ts > Setup Routes Integration Tests > POST /setup/admin > should return 400 if admin already exists
+AssertionError: expected 500 to be 400 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 400[39m
+[31m+ 500[39m
+
+ ❯ server/routes/__tests__/setup.integration.test.ts:298:31
+    296| 
+    297|       // Assert
+    298|       expect(response.status).toBe(400)
+       |                               ^
+    299|       expect(response.body).toMatchObject({
+    300|         error: 'Admin account already exists'
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/27]⎯
+
+ FAIL  server/routes/__tests__/setup.integration.test.ts > Setup Routes Integration Tests > POST /setup/admin > should return 400 if setup is already complete
+AssertionError: expected 500 to be 400 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 400[39m
+[31m+ 500[39m
+
+ ❯ server/routes/__tests__/setup.integration.test.ts:318:31
+    316| 
+    317|       // Assert
+    318|       expect(response.status).toBe(400)
+       |                               ^
+    319|       expect(response.body).toMatchObject({
+    320|         error: 'Setup already completed'
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/27]⎯
+
+ FAIL  server/routes/__tests__/setup.integration.test.ts > Setup Routes Integration Tests > POST /setup/configure > should configure instance with valid settings
+AssertionError: expected 400 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 400[39m
+
+ ❯ server/routes/__tests__/setup.integration.test.ts:348:31
+    346| 
+    347|       // Assert
+    348|       expect(response.status).toBe(200)
+       |                               ^
+    349|       expect(response.body).toMatchObject({
+    350|         success: true,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/27]⎯
+
+ FAIL  server/routes/__tests__/setup.integration.test.ts > Setup Routes Integration Tests > POST /setup/configure > should require admin authentication
+AssertionError: expected 400 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 400[39m
+
+ ❯ server/routes/__tests__/setup.integration.test.ts:372:31
+    370| 
+    371|       // Assert
+    372|       expect(response.status).toBe(200)
+       |                               ^
+    373|       // Without auth middleware, it should still work (development mo…
+    374|     })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/27]⎯
+
+ FAIL  server/routes/__tests__/setup.integration.test.ts > Setup Routes Integration Tests > POST /setup/complete > should complete setup successfully
+AssertionError: expected 500 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 500[39m
+
+ ❯ server/routes/__tests__/setup.integration.test.ts:422:31
+    420| 
+    421|       // Assert
+    422|       expect(response.status).toBe(200)
+       |                               ^
+    423|       expect(response.body).toMatchObject({
+    424|         success: true,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/27]⎯
+
+ FAIL  server/routes/__tests__/setup.integration.test.ts > Setup Routes Integration Tests > POST /setup/complete > should return 400 if setup is already complete
+AssertionError: expected 500 to be 400 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 400[39m
+[31m+ 500[39m
+
+ ❯ server/routes/__tests__/setup.integration.test.ts:441:31
+    439| 
+    440|       // Assert
+    441|       expect(response.status).toBe(400)
+       |                               ^
+    442|       expect(response.body).toMatchObject({
+    443|         error: 'Setup already completed'
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/27]⎯
+
+ FAIL  server/routes/__tests__/setup.integration.test.ts > Setup Routes Integration Tests > POST /setup/complete > should return 500 if database is unhealthy
+AssertionError: expected { …(2) } to match object { Object (error) }
+(1 matching property omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[32m-   "error": "Database health check failed",[39m
+[31m+   "error": "Setup completion failed",[39m
+[2m  }[22m
+
+ ❯ server/routes/__tests__/setup.integration.test.ts:462:29
+    460|       // Assert
+    461|       expect(response.status).toBe(500)
+    462|       expect(response.body).toMatchObject({
+       |                             ^
+    463|         error: 'Database health check failed'
+    464|       })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/27]⎯
+
+ FAIL  server/routes/__tests__/setup.integration.test.ts > Setup Routes Integration Tests > POST /setup/reset > should reset setup in development mode
+AssertionError: expected 500 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 500[39m
+
+ ❯ server/routes/__tests__/setup.integration.test.ts:481:31
+    479| 
+    480|       // Assert
+    481|       expect(response.status).toBe(200)
+       |                               ^
+    482|       expect(response.body).toMatchObject({
+    483|         success: true,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/27]⎯
+
+ FAIL  server/routes/__tests__/setup.integration.test.ts > Setup Routes Integration Tests > POST /setup/reset > should require admin auth in production mode
+AssertionError: expected 403 to be 200 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 403[39m
+
+ ❯ server/routes/__tests__/setup.integration.test.ts:510:31
+    508| 
+    509|       // Assert
+    510|       expect(response.status).toBe(200)
+       |                               ^
+    511|       expect(mockAuthMiddleware.authenticate).toHaveBeenCalled()
+    512|       expect(mockAuthMiddleware.requireAdmin).toHaveBeenCalled()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/27]⎯
+
+ FAIL  server/routes/__tests__/setup.integration.test.ts > Setup Routes Integration Tests > POST /setup/reset > should handle reset errors
+AssertionError: expected 403 to be 500 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 500[39m
+[31m+ 403[39m
+
+ ❯ server/routes/__tests__/setup.integration.test.ts:527:31
+    525| 
+    526|       // Assert
+    527|       expect(response.status).toBe(500)
+       |                               ^
+    528|       expect(response.body).toMatchObject({
+    529|         error: 'Failed to reset setup'
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[26/27]⎯
+
+ FAIL  server/routes/__tests__/setup.integration.test.ts > Setup Routes Integration Tests > Setup Flow Integration > should enforce proper setup sequence
+AssertionError: expected undefined to be true // Object.is equality
+
+[32m- Expected:[39m 
+true
+
+[31m+ Received:[39m 
+undefined
+
+ ❯ server/routes/__tests__/setup.integration.test.ts:542:40
+    540|       
+    541|       let response = await request(app).get('/setup/status')
+    542|       expect(response.body.needsSetup).toBe(true)
+       |                                        ^
+    543| 
+    544|       // 2. Initialize setup
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[27/27]⎯
+
+
+ Test Files  2 failed | 16 passed (18)
+      Tests  27 failed | 398 passed | 1 skipped (426)
+   Start at  19:44:16
+   Duration  2.61s (transform 902ms, setup 1.90s, collect 2.17s, tests 924ms, environment 5.80s, prepare 1.32s)
+

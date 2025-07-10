@@ -10,7 +10,6 @@ export { AccountStorage } from './AccountStorage';
 export { EmailStorage } from './EmailStorage';
 export { SettingsStorage } from './SettingsStorage';
 export { DataMigration } from './DataMigration';
-export { DatabaseStorage, HybridStorage } from './DatabaseStorage';
 
 // Legacy exports for backward compatibility
 export { BaseStorage as Storage } from './BaseStorage';

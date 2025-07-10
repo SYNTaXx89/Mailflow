@@ -10,9 +10,13 @@ import { EmailService } from '../services/EmailService';
 import { getAccountWithCredentials } from '../utils/accountHelpers';
 import { DatabaseManager } from '../database/DatabaseManager';
 import { EmailCacheService } from '../cache/EmailCacheService';
+import { AuthMiddleware } from '../auth/AuthMiddleware';
 
-export function createIdleRouter(databaseManager: DatabaseManager, emailCacheService: EmailCacheService): express.Router {
+export function createIdleRouter(databaseManager: DatabaseManager, emailCacheService: EmailCacheService, authMiddleware: AuthMiddleware): express.Router {
   const router = express.Router();
+
+  // Apply authentication middleware to all IDLE routes
+  router.use(authMiddleware.authenticate);
 
 /**
  * POST /api/idle/:accountId/start

@@ -269,7 +269,87 @@ describe('useJWTAuth', () => {
 })
 ```
 
-### **6. Build Process Integration**
+### **6. Testing Dependency Injection Components**
+
+#### **Example: Testing DatabaseManager with Constructor Injection**
+
+```typescript
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { DatabaseManager } from '../DatabaseManager'
+import { ConfigManager } from '../../config/ConfigManager'
+
+describe('DatabaseManager - Dependency Injection Pattern', () => {
+  let databaseManager: DatabaseManager
+  let mockConfigManager: any
+
+  beforeEach(() => {
+    // Create mock ConfigManager instance
+    mockConfigManager = {
+      getConfigDir: vi.fn().mockReturnValue('/test/config'),
+      getDeep: vi.fn(),
+      get: vi.fn(),
+      set: vi.fn(),
+      initialize: vi.fn(),
+    }
+    
+    // Create DatabaseManager with mocked ConfigManager
+    databaseManager = new DatabaseManager(mockConfigManager)
+    
+    // Mock the database property to simulate initialization
+    ;(databaseManager as any).db = mockDatabase
+    ;(databaseManager as any).encryptionKey = 'test-key'
+  })
+
+  it('should create instance with injected ConfigManager', () => {
+    expect(databaseManager).toBeInstanceOf(DatabaseManager)
+    expect(mockConfigManager.getConfigDir).toHaveBeenCalled()
+  })
+
+  it('should create different instances for different ConfigManager instances', () => {
+    const anotherConfigManager = { ...mockConfigManager }
+    const anotherDbManager = new DatabaseManager(anotherConfigManager)
+    
+    expect(databaseManager).not.toBe(anotherDbManager)
+  })
+})
+```
+
+#### **Pattern: Testing Route Factory Functions**
+
+```typescript
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { createAccountsRouter } from '../accounts'
+import { DatabaseManager } from '../../database/DatabaseManager'
+import { AuthMiddleware } from '../../auth/AuthMiddleware'
+
+describe('Accounts Routes - Factory Pattern', () => {
+  let mockDatabaseManager: DatabaseManager
+  let mockAuthMiddleware: AuthMiddleware
+  let router: express.Router
+
+  beforeEach(() => {
+    mockDatabaseManager = {
+      getUserAccounts: vi.fn(),
+      createAccount: vi.fn(),
+      // ... other methods
+    } as unknown as DatabaseManager
+    
+    mockAuthMiddleware = {
+      authenticate: vi.fn((req, res, next) => next()),
+      requireAdmin: vi.fn((req, res, next) => next()),
+    } as unknown as AuthMiddleware
+
+    // Create router with injected dependencies
+    router = createAccountsRouter(mockDatabaseManager, mockAuthMiddleware)
+  })
+
+  it('should apply authentication middleware to all routes', () => {
+    expect(mockAuthMiddleware.authenticate).toBeDefined()
+  })
+})
+```
+
+### **7. Build Process Integration**
 
 #### **Update your CI/CD pipeline** (`.github/workflows/test.yml`):
 
@@ -393,7 +473,9 @@ server/
 │   └── ...
 ├── database/
 │   ├── __tests__/
-│   │   └── DatabaseManager.test.ts
+│   │   ├── DatabaseManager.test.ts
+│   │   ├── DatabaseManager-simple.test.ts    # New dependency injection tests
+│   │   └── DatabaseManager-basic.test.ts     # Constructor tests
 │   └── ...
 └── ...
 ```
