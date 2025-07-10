@@ -8,14 +8,14 @@
 import React, { useState } from 'react';
 import { Mail, Settings, Plus, User, LogOut } from 'lucide-react';
 import { GrainTexture } from './index';
-import { useJWTAuth } from '../hooks/useJWTAuth';
+import { useAuth } from '../contexts/AuthContext';
 
 interface EmailOverviewProps {
   onNavigateWelcome: () => void;
 }
 
 const EmailOverview: React.FC<EmailOverviewProps> = ({ onNavigateWelcome }) => {
-  const auth = useJWTAuth();
+  const auth = useAuth();
   const [selectedEmail, setSelectedEmail] = useState<any>(null);
 
   // Mock data for demonstration (will be replaced with real data later)

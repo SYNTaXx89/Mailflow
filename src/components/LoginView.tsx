@@ -8,13 +8,13 @@
 import React, { useState } from 'react';
 import { Mail, Lock, Loader2, AlertCircle } from 'lucide-react';
 import GrainTexture from './GrainTexture';
-import { useJWTAuth } from '../hooks/useJWTAuth';
+import { useAuth } from '../contexts/AuthContext';
 
 const LoginView: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const auth = useJWTAuth();
+  const auth = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

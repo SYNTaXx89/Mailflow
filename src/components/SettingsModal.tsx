@@ -44,9 +44,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   
   if (!showSettings) return null;
   
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (confirm('Are you sure you want to logout?')) {
-      auth.logout();
+      await auth.logout();
     }
   };
   

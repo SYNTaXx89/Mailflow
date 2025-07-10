@@ -12,7 +12,7 @@ import GrainTexture from './GrainTexture';
 import SetupWizard from './setup/SetupWizard';
 import LoginView from './LoginView';
 import EmailClient from '../App'; // Our existing app
-import { useJWTAuth } from '../hooks/useJWTAuth';
+import { AuthProvider, useAuth } from '../contexts/AuthContext';
 
 interface SetupStatus {
   needsSetup: boolean;
@@ -22,11 +22,21 @@ interface SetupStatus {
   message?: string;
 }
 
-const AppRouter: React.FC = () => {
+const AppRouterContent: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [setupStatus, setSetupStatus] = useState<SetupStatus | null>(null);
-  const auth = useJWTAuth();
+  const auth = useAuth();
+
+  // Debug auth state changes
+  useEffect(() => {
+    console.log('🔍 AppRouter: Auth state changed:', {
+      isAuthenticated: auth.isAuthenticated,
+      isLoading: auth.isLoading,
+      user: auth.user?.email,
+      setupStatus: setupStatus?.needsSetup
+    });
+  }, [auth.isAuthenticated, auth.isLoading, auth.user, setupStatus]);
 
   useEffect(() => {
     checkSetupStatus();
@@ -143,11 +153,21 @@ const AppRouter: React.FC = () => {
 
   // Show login if not authenticated
   if (!auth.isAuthenticated) {
+    console.log('🔍 AppRouter: Rendering LoginView (not authenticated)');
     return <LoginView />;
   }
 
   // Show main application if authenticated
+  console.log('🔍 AppRouter: Rendering EmailClient (authenticated)');
   return <EmailClient />;
+};
+
+const AppRouter: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppRouterContent />
+    </AuthProvider>
+  );
 };
 
 export default AppRouter;

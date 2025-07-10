@@ -52,25 +52,31 @@ export const useJWTAuth = (): AuthContextType => {
       const refreshToken = localStorage.getItem('mailflow_refresh_token');
 
       if (!accessToken) {
+        console.log('🔍 No access token found in localStorage');
         setAuthState(prev => ({ ...prev, isLoading: false }));
         return;
       }
 
       // Check if token is expired
       if (isTokenExpired(accessToken)) {
+        console.log('🔍 Access token is expired');
         if (refreshToken) {
+          console.log('🔄 Attempting to refresh tokens...');
           const refreshSuccess = await refreshTokens();
           if (!refreshSuccess) {
+            console.log('❌ Token refresh failed, clearing auth state');
             clearTokens();
             setAuthState(prev => ({ ...prev, isLoading: false }));
             return;
           }
         } else {
+          console.log('🔍 No refresh token available, clearing auth state');
           clearTokens();
           setAuthState(prev => ({ ...prev, isLoading: false }));
           return;
         }
       } else {
+        console.log('✅ Access token is valid');
         // Token is valid, get user info
         const user = await getCurrentUser(accessToken);
         if (user) {
@@ -129,6 +135,7 @@ export const useJWTAuth = (): AuthContextType => {
       });
 
       console.log('✅ User logged in successfully:', data.user.email);
+      console.log('🔄 Auth state updated - isAuthenticated: true, should trigger re-render');
     } catch (error) {
       console.error('❌ Login failed:', error);
       // Clear loading state on error
@@ -157,15 +164,17 @@ export const useJWTAuth = (): AuthContextType => {
     }
 
     clearTokens();
-    setAuthState({
+    setAuthState(prev => ({
+      ...prev,
       isAuthenticated: false,
       isLoading: false,
       user: null,
       accessToken: null,
       refreshToken: null
-    });
+    }));
 
     console.log('✅ User logged out');
+    console.log('🔄 Auth state updated - isAuthenticated: false, should trigger re-render');
   };
 
   /**
@@ -265,8 +274,16 @@ export const useJWTAuth = (): AuthContextType => {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const currentTime = Math.floor(Date.now() / 1000);
-      return payload.exp < currentTime;
+      const isExpired = payload.exp < currentTime;
+      console.log('🔍 Token expiration check:', {
+        exp: payload.exp,
+        current: currentTime,
+        isExpired,
+        expiresIn: payload.exp - currentTime + ' seconds'
+      });
+      return isExpired;
     } catch (error) {
+      console.log('🔍 Token parsing failed:', error);
       return true;
     }
   };

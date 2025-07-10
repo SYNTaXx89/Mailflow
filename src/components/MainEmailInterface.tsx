@@ -10,7 +10,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GrainTexture, Sidebar, EmailView, AddAccountModal, SettingsModal, EmailComposer } from './index';
-import { useJWTAuth } from '../hooks/useJWTAuth';
+import { useAuth } from '../contexts/AuthContext';
 import { Account, Email, AppState, ComposerData, ComposerType, NewAccountData } from '../types';
 import { AccountApi, SettingsApi } from '../utils/api';
 import { AppStateStorage } from '../utils/storage';
@@ -21,7 +21,13 @@ interface MainEmailInterfaceProps {
 }
 
 const MainEmailInterface: React.FC<MainEmailInterfaceProps> = () => {
-  const auth = useJWTAuth();
+  const auth = useAuth();
+
+  // Safeguard: If not authenticated, don't render the interface
+  if (!auth.isAuthenticated) {
+    console.log('🚫 MainEmailInterface: Not authenticated, refusing to render');
+    return null; // AppRouter should handle showing LoginView
+  }
   
   // Main application state (separate from admin authentication)
   const [appState, setAppState] = useState<AppState>({
