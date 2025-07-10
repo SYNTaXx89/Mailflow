@@ -35,13 +35,37 @@ const EmailView: React.FC<EmailViewProps> = ({
    * Process HTML content to fix common issues and enhance rendering
    */
   const processHtmlContent = (html: string): string => {
+    // Check for potentially problematic CSS before processing
+    const hasProblematicCSS = /style="[^"]*(?:position|z-index|margin|padding|body|html)[^"]*"/gi.test(html) ||
+                              /<style/gi.test(html) ||
+                              /<link[^>]*stylesheet/gi.test(html);
+    
+    if (hasProblematicCSS) {
+      console.warn('⚠️ Email contains potentially problematic CSS that could affect layout:', {
+        subject: selectedEmail?.subject,
+        id: selectedEmail?.id
+      });
+    }
+
     let processed = html
       // Remove scripts for security
       .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      // Remove external styles but keep inline styles
+      // Remove external styles and style blocks that could affect layout
       .replace(/<link[^>]*stylesheet[^>]*>/gi, '')
+      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
       // Remove meta tags that might interfere
       .replace(/<meta[^>]*>/gi, '')
+      // Remove CSS that could affect parent elements
+      .replace(/style="[^"]*(?:position\s*:|z-index\s*:|margin\s*:|padding\s*:)[^"]*"/gi, (match) => {
+        // Keep safe inline styles, remove potentially problematic ones
+        return match
+          .replace(/position\s*:[^;"]*/gi, '')
+          .replace(/z-index\s*:[^;"]*/gi, '')
+          .replace(/margin\s*:[^;"]*/gi, '')
+          .replace(/padding\s*:[^;"]*/gi, '')
+          .replace(/style="[;\s]*"/gi, '') // Remove empty style attributes
+          .replace(/style=""/gi, ''); // Remove completely empty style attributes
+      })
       // Convert relative URLs to absolute (basic implementation)
       .replace(/src="\/([^"]*)"([^>]*)>/gi, 'src="$1"$2>')
       // Fix image URLs with spaces
@@ -61,13 +85,13 @@ const EmailView: React.FC<EmailViewProps> = ({
         return match;
       });
 
-    // If no body tag, wrap content
-    if (!processed.includes('<body')) {
-      processed = `<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #d1d5db; background-color: transparent; margin: 0; padding: 0;">${processed}</body>`;
-    } else {
-      // Enhance existing body tag
-      processed = processed.replace(/<body([^>]*)>/gi, '<body$1 style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; line-height: 1.6; color: #d1d5db !important; background-color: transparent !important; margin: 0; padding: 0;">');
-    }
+    // Remove body and html tags to prevent layout interference
+    processed = processed
+      .replace(/<html[^>]*>/gi, '')
+      .replace(/<\/html>/gi, '')
+      .replace(/<body[^>]*>/gi, '')
+      .replace(/<\/body>/gi, '')
+      .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, ''); // Remove head section entirely
 
     // Enhance text readability for dark theme
     processed = processed
@@ -184,23 +208,27 @@ const EmailView: React.FC<EmailViewProps> = ({
                 
                 const isHtmlContent = hasHtmlTags || hasValidHtmlStructure;
                 
-                console.log('🔍 HTML Detection:', {
+                console.log('🔍 Email Content Analysis:', {
                   hasHtmlTags,
                   hasValidHtmlStructure,
                   isHtmlContent,
-                  contentPreview: content.substring(0, 200)
+                  contentLength: content.length,
+                  contentPreview: content.substring(0, 200),
+                  emailId: selectedEmail.id,
+                  subject: selectedEmail.subject
                 });
                 
                 if (isHtmlContent) {
-                  // HTML content - full width container with proper styling
+                  // HTML content - isolated container to prevent CSS leakage
                   return (
+                    <div className="p-6">
                       <div 
-                        className="text-gray-300 leading-relaxed font-sans email-content"
+                        className="text-gray-300 leading-relaxed font-sans"
                         dangerouslySetInnerHTML={{ 
                           __html: processHtmlContent(selectedEmail.content)
                         }}
                         style={{
-                          // Base styles for HTML email content
+                          // Base styles for HTML email content with isolation
                           color: '#d1d5db',
                           backgroundColor: 'transparent',
                           fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
@@ -208,9 +236,14 @@ const EmailView: React.FC<EmailViewProps> = ({
                           lineHeight: '1.6',
                           maxWidth: '100%',
                           overflow: 'hidden',
-                          wordWrap: 'break-word'
+                          wordWrap: 'break-word',
+                          // CSS isolation properties
+                          isolation: 'isolate',
+                          contain: 'style layout',
+                          position: 'relative'
                         }}
                       />
+                    </div>
                   );
                 } else {
                   // Plain text content - with padding for readability
