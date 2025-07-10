@@ -94,6 +94,9 @@ function setupApiRoutes() {
   const tokenManager = new TokenManager(configManager);
   const authMiddleware = new AuthMiddleware(tokenManager, databaseManager);
   
+  // Root health endpoint for Docker health checks
+  app.use('/health', createHealthRouter());
+  
   // API Routes
   app.use('/api/setup', createSetupRouter(configManager, databaseManager, authMiddleware));
   app.use('/api/auth', createAuthRouter(databaseManager, tokenManager, authMiddleware));
