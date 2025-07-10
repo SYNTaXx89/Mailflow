@@ -2,27 +2,20 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { Request, Response, NextFunction } from 'express'
 import { AuthMiddleware } from '../AuthMiddleware'
 import { TokenManager } from '../TokenManager'
+import { DatabaseManager } from '../../database/DatabaseManager'
 
-// Mock TokenManager
-vi.mock('../TokenManager', () => ({
-  TokenManager: {
-    extractTokenFromHeader: vi.fn(),
-    verifyAccessToken: vi.fn(),
-  },
-}))
+// Create mock instances
+const mockTokenManager = {
+  extractTokenFromHeader: vi.fn(),
+  verifyAccessToken: vi.fn(),
+} as unknown as TokenManager
 
-// Mock DatabaseManager for account ownership tests
-const mockGetAccountById = vi.fn()
-
-vi.mock('../../database/DatabaseManager', () => ({
-  DatabaseManager: {
-    getInstance: () => ({
-      getAccountById: mockGetAccountById,
-    }),
-  },
-}))
+const mockDatabaseManager = {
+  getAccountById: vi.fn(),
+} as unknown as DatabaseManager
 
 describe('AuthMiddleware', () => {
+  let authMiddleware: AuthMiddleware
   let mockRequest: Partial<Request>
   let mockResponse: Partial<Response>
   let mockNext: NextFunction
@@ -30,6 +23,9 @@ describe('AuthMiddleware', () => {
   let mockStatus: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
+    // Create new AuthMiddleware instance with mocked dependencies
+    authMiddleware = new AuthMiddleware(mockTokenManager, mockDatabaseManager)
+    
     mockJson = vi.fn()
     mockStatus = vi.fn().mockReturnValue({ json: mockJson })
     
@@ -65,19 +61,19 @@ describe('AuthMiddleware', () => {
       }
 
       mockRequest.headers!.authorization = `Bearer ${mockToken}`
-      vi.mocked(TokenManager.extractTokenFromHeader).mockReturnValue(mockToken)
-      vi.mocked(TokenManager.verifyAccessToken).mockReturnValue(mockPayload)
+      vi.mocked(mockTokenManager.extractTokenFromHeader).mockReturnValue(mockToken)
+      vi.mocked(mockTokenManager.verifyAccessToken).mockReturnValue(mockPayload)
 
       // Act
-      AuthMiddleware.authenticate(
+      authMiddleware.authenticate(
         mockRequest as Request,
         mockResponse as Response,
         mockNext
       )
 
       // Assert
-      expect(TokenManager.extractTokenFromHeader).toHaveBeenCalledWith(`Bearer ${mockToken}`)
-      expect(TokenManager.verifyAccessToken).toHaveBeenCalledWith(mockToken)
+      expect(mockTokenManager.extractTokenFromHeader).toHaveBeenCalledWith(`Bearer ${mockToken}`)
+      expect(mockTokenManager.verifyAccessToken).toHaveBeenCalledWith(mockToken)
       expect(mockRequest.user).toEqual(mockPayload)
       expect(mockNext).toHaveBeenCalled()
       expect(mockStatus).not.toHaveBeenCalled()
@@ -86,10 +82,10 @@ describe('AuthMiddleware', () => {
     it('should reject request with missing authorization header', () => {
       // Arrange
       mockRequest.headers!.authorization = undefined
-      vi.mocked(TokenManager.extractTokenFromHeader).mockReturnValue(null)
+      vi.mocked(mockTokenManager.extractTokenFromHeader).mockReturnValue(null)
 
       // Act
-      AuthMiddleware.authenticate(
+      authMiddleware.authenticate(
         mockRequest as Request,
         mockResponse as Response,
         mockNext
@@ -107,10 +103,10 @@ describe('AuthMiddleware', () => {
     it('should reject request with malformed authorization header', () => {
       // Arrange
       mockRequest.headers!.authorization = 'InvalidFormat'
-      vi.mocked(TokenManager.extractTokenFromHeader).mockReturnValue(null)
+      vi.mocked(mockTokenManager.extractTokenFromHeader).mockReturnValue(null)
 
       // Act
-      AuthMiddleware.authenticate(
+      authMiddleware.authenticate(
         mockRequest as Request,
         mockResponse as Response,
         mockNext
@@ -129,13 +125,13 @@ describe('AuthMiddleware', () => {
       // Arrange
       const mockToken = 'expired.jwt.token'
       mockRequest.headers!.authorization = `Bearer ${mockToken}`
-      vi.mocked(TokenManager.extractTokenFromHeader).mockReturnValue(mockToken)
-      vi.mocked(TokenManager.verifyAccessToken).mockImplementation(() => {
+      vi.mocked(mockTokenManager.extractTokenFromHeader).mockReturnValue(mockToken)
+      vi.mocked(mockTokenManager.verifyAccessToken).mockImplementation(() => {
         throw new Error('Token expired')
       })
 
       // Act
-      AuthMiddleware.authenticate(
+      authMiddleware.authenticate(
         mockRequest as Request,
         mockResponse as Response,
         mockNext
@@ -154,13 +150,13 @@ describe('AuthMiddleware', () => {
       // Arrange
       const mockToken = 'invalid.jwt.token'
       mockRequest.headers!.authorization = `Bearer ${mockToken}`
-      vi.mocked(TokenManager.extractTokenFromHeader).mockReturnValue(mockToken)
-      vi.mocked(TokenManager.verifyAccessToken).mockImplementation(() => {
+      vi.mocked(mockTokenManager.extractTokenFromHeader).mockReturnValue(mockToken)
+      vi.mocked(mockTokenManager.verifyAccessToken).mockImplementation(() => {
         throw new Error('Invalid token')
       })
 
       // Act
-      AuthMiddleware.authenticate(
+      authMiddleware.authenticate(
         mockRequest as Request,
         mockResponse as Response,
         mockNext
@@ -179,13 +175,13 @@ describe('AuthMiddleware', () => {
       // Arrange
       const mockToken = 'problematic.jwt.token'
       mockRequest.headers!.authorization = `Bearer ${mockToken}`
-      vi.mocked(TokenManager.extractTokenFromHeader).mockReturnValue(mockToken)
-      vi.mocked(TokenManager.verifyAccessToken).mockImplementation(() => {
+      vi.mocked(mockTokenManager.extractTokenFromHeader).mockReturnValue(mockToken)
+      vi.mocked(mockTokenManager.verifyAccessToken).mockImplementation(() => {
         throw new Error('Unexpected error')
       })
 
       // Act
-      AuthMiddleware.authenticate(
+      authMiddleware.authenticate(
         mockRequest as Request,
         mockResponse as Response,
         mockNext
@@ -211,7 +207,7 @@ describe('AuthMiddleware', () => {
       }
 
       // Act
-      AuthMiddleware.requireAdmin(
+      authMiddleware.requireAdmin(
         mockRequest as Request,
         mockResponse as Response,
         mockNext
@@ -231,7 +227,7 @@ describe('AuthMiddleware', () => {
       }
 
       // Act
-      AuthMiddleware.requireAdmin(
+      authMiddleware.requireAdmin(
         mockRequest as Request,
         mockResponse as Response,
         mockNext
@@ -251,7 +247,7 @@ describe('AuthMiddleware', () => {
       mockRequest.user = undefined
 
       // Act
-      AuthMiddleware.requireAdmin(
+      authMiddleware.requireAdmin(
         mockRequest as Request,
         mockResponse as Response,
         mockNext
@@ -270,7 +266,7 @@ describe('AuthMiddleware', () => {
   describe('requireAccountOwnership', () => {
     beforeEach(() => {
       // Reset the shared mock before each test
-      mockGetAccountById.mockClear()
+      vi.mocked(mockDatabaseManager.getAccountById).mockClear()
     })
 
     it('should allow account owner to access their account', async () => {
@@ -292,9 +288,9 @@ describe('AuthMiddleware', () => {
         email: 'test@example.com',
       }
 
-      mockGetAccountById.mockResolvedValue(mockAccount)
+      vi.mocked(mockDatabaseManager.getAccountById).mockResolvedValue(mockAccount)
 
-      const middleware = AuthMiddleware.requireAccountOwnership()
+      const middleware = authMiddleware.requireAccountOwnership()
 
       // Act
       await middleware(
@@ -304,7 +300,7 @@ describe('AuthMiddleware', () => {
       )
 
       // Assert
-      expect(mockGetAccountById).toHaveBeenCalledWith(accountId)
+      expect(mockDatabaseManager.getAccountById).toHaveBeenCalledWith(accountId)
       expect(mockNext).toHaveBeenCalled()
       expect(mockRequest.account).toEqual(mockAccount)
       expect(mockStatus).not.toHaveBeenCalled()
@@ -330,9 +326,9 @@ describe('AuthMiddleware', () => {
         email: 'test@example.com',
       }
 
-      mockGetAccountById.mockResolvedValue(mockAccount)
+      vi.mocked(mockDatabaseManager.getAccountById).mockResolvedValue(mockAccount)
 
-      const middleware = AuthMiddleware.requireAccountOwnership()
+      const middleware = authMiddleware.requireAccountOwnership()
 
       // Act
       await middleware(
@@ -342,7 +338,7 @@ describe('AuthMiddleware', () => {
       )
 
       // Assert
-      expect(mockGetAccountById).toHaveBeenCalledWith(accountId)
+      expect(mockDatabaseManager.getAccountById).toHaveBeenCalledWith(accountId)
       expect(mockNext).toHaveBeenCalled()
       expect(mockRequest.account).toEqual(mockAccount)
       expect(mockStatus).not.toHaveBeenCalled()
@@ -368,9 +364,9 @@ describe('AuthMiddleware', () => {
         email: 'other@example.com',
       }
 
-      mockGetAccountById.mockResolvedValue(mockAccount)
+      vi.mocked(mockDatabaseManager.getAccountById).mockResolvedValue(mockAccount)
 
-      const middleware = AuthMiddleware.requireAccountOwnership()
+      const middleware = authMiddleware.requireAccountOwnership()
 
       // Act
       await middleware(
@@ -380,7 +376,7 @@ describe('AuthMiddleware', () => {
       )
 
       // Assert
-      expect(mockGetAccountById).toHaveBeenCalledWith(accountId)
+      expect(mockDatabaseManager.getAccountById).toHaveBeenCalledWith(accountId)
       expect(mockStatus).toHaveBeenCalledWith(403)
       expect(mockJson).toHaveBeenCalledWith({
         success: false,
@@ -401,9 +397,9 @@ describe('AuthMiddleware', () => {
       }
       mockRequest.params = { accountId }
 
-      mockGetAccountById.mockResolvedValue(undefined)
+      vi.mocked(mockDatabaseManager.getAccountById).mockResolvedValue(undefined)
 
-      const middleware = AuthMiddleware.requireAccountOwnership()
+      const middleware = authMiddleware.requireAccountOwnership()
 
       // Act
       await middleware(
@@ -413,7 +409,7 @@ describe('AuthMiddleware', () => {
       )
 
       // Assert
-      expect(mockGetAccountById).toHaveBeenCalledWith(accountId)
+      expect(mockDatabaseManager.getAccountById).toHaveBeenCalledWith(accountId)
       expect(mockStatus).toHaveBeenCalledWith(404)
       expect(mockJson).toHaveBeenCalledWith({
         success: false,
@@ -427,7 +423,7 @@ describe('AuthMiddleware', () => {
       mockRequest.user = undefined
       mockRequest.params = { accountId: 'account123' }
 
-      const middleware = AuthMiddleware.requireAccountOwnership()
+      const middleware = authMiddleware.requireAccountOwnership()
 
       // Act
       await middleware(
@@ -454,7 +450,7 @@ describe('AuthMiddleware', () => {
       }
       mockRequest.params = {} // Missing accountId
 
-      const middleware = AuthMiddleware.requireAccountOwnership()
+      const middleware = authMiddleware.requireAccountOwnership()
 
       // Act
       await middleware(
@@ -483,11 +479,11 @@ describe('AuthMiddleware', () => {
       }
       mockRequest.params = { accountId }
 
-      mockGetAccountById.mockRejectedValue(
+      vi.mocked(mockDatabaseManager.getAccountById).mockRejectedValue(
         new Error('Database connection failed')
       )
 
-      const middleware = AuthMiddleware.requireAccountOwnership()
+      const middleware = authMiddleware.requireAccountOwnership()
 
       // Act
       await middleware(
@@ -524,9 +520,9 @@ describe('AuthMiddleware', () => {
         email: 'test@example.com',
       }
 
-      mockGetAccountById.mockResolvedValue(mockAccount)
+      vi.mocked(mockDatabaseManager.getAccountById).mockResolvedValue(mockAccount)
 
-      const middleware = AuthMiddleware.requireAccountOwnership(customParam)
+      const middleware = authMiddleware.requireAccountOwnership(customParam)
 
       // Act
       await middleware(
@@ -536,7 +532,7 @@ describe('AuthMiddleware', () => {
       )
 
       // Assert
-      expect(mockGetAccountById).toHaveBeenCalledWith(accountId)
+      expect(mockDatabaseManager.getAccountById).toHaveBeenCalledWith(accountId)
       expect(mockNext).toHaveBeenCalled()
     })
   })
@@ -552,7 +548,7 @@ describe('AuthMiddleware', () => {
       }
       mockRequest.params = { userId }
 
-      const middleware = AuthMiddleware.requireSelfOrAdmin()
+      const middleware = authMiddleware.requireSelfOrAdmin()
 
       // Act
       middleware(
@@ -575,7 +571,7 @@ describe('AuthMiddleware', () => {
       }
       mockRequest.params = { userId: 'other456' }
 
-      const middleware = AuthMiddleware.requireSelfOrAdmin()
+      const middleware = authMiddleware.requireSelfOrAdmin()
 
       // Act
       middleware(
@@ -598,7 +594,7 @@ describe('AuthMiddleware', () => {
       }
       mockRequest.params = { userId: 'other456' }
 
-      const middleware = AuthMiddleware.requireSelfOrAdmin()
+      const middleware = authMiddleware.requireSelfOrAdmin()
 
       // Act
       middleware(

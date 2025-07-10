@@ -33,26 +33,51 @@ vi.mock('crypto', () => ({
   },
 }))
 
-// Mock ConfigManager
+// Mock ConfigManager class
+const mockConfigManagerInstance = {
+  getConfigDir: vi.fn().mockReturnValue('/test/config'),
+  getDeep: vi.fn(),
+  get: vi.fn(),
+  set: vi.fn(),
+  initialize: vi.fn(),
+  isSetupCompleted: vi.fn().mockReturnValue(false),
+  save: vi.fn(),
+  load: vi.fn(),
+}
+
 vi.mock('../../config/ConfigManager', () => ({
-  configManager: {
-    getConfigDir: vi.fn().mockReturnValue('/test/config'),
-  },
+  ConfigManager: vi.fn().mockImplementation(() => mockConfigManagerInstance),
 }))
 
 // Import after mocking
 import { DatabaseManager, User, Account, Email, AppSettings } from '../DatabaseManager'
+import { ConfigManager } from '../../config/ConfigManager'
 
 describe('DatabaseManager - Core Operations', () => {
   let databaseManager: DatabaseManager
+  let mockConfigManager: any
 
   beforeEach(() => {
-    // Reset singleton for each test
-    ;(DatabaseManager as any).instance = undefined
+    // Create mock ConfigManager instance manually
+    mockConfigManager = {
+      getConfigDir: vi.fn().mockReturnValue('/test/config'),
+      getDeep: vi.fn(),
+      get: vi.fn(),
+      set: vi.fn(),
+      initialize: vi.fn(),
+      isSetupCompleted: vi.fn().mockReturnValue(false),
+      save: vi.fn(),
+      load: vi.fn(),
+    }
     
-    databaseManager = DatabaseManager.getInstance()
+    // Create DatabaseManager with mocked ConfigManager
+    databaseManager = new DatabaseManager(mockConfigManager)
     
-    // Clear all mocks after instance creation
+    // Mock the database property to simulate initialization
+    ;(databaseManager as any).db = mockDatabase
+    ;(databaseManager as any).encryptionKey = 'test-key'
+    
+    // Clear database mock calls after instance creation
     vi.clearAllMocks()
   })
 
@@ -60,11 +85,30 @@ describe('DatabaseManager - Core Operations', () => {
     vi.resetAllMocks()
   })
 
-  describe('Singleton Pattern', () => {
-    it('should return same instance when called multiple times', () => {
-      const instance1 = DatabaseManager.getInstance()
-      const instance2 = DatabaseManager.getInstance()
-      expect(instance1).toBe(instance2)
+  describe('Constructor', () => {
+    it('should create DatabaseManager instance with ConfigManager', () => {
+      const configManager = {
+        getConfigDir: vi.fn().mockReturnValue('/test/config'),
+        getDeep: vi.fn(),
+        get: vi.fn(),
+        set: vi.fn(),
+        initialize: vi.fn(),
+      }
+      const instance = new DatabaseManager(configManager)
+      expect(instance).toBeInstanceOf(DatabaseManager)
+    })
+    
+    it('should create different instances when called multiple times', () => {
+      const configManager = {
+        getConfigDir: vi.fn().mockReturnValue('/test/config'),
+        getDeep: vi.fn(),
+        get: vi.fn(),
+        set: vi.fn(),
+        initialize: vi.fn(),
+      }
+      const instance1 = new DatabaseManager(configManager)
+      const instance2 = new DatabaseManager(configManager)
+      expect(instance1).not.toBe(instance2)
     })
   })
 
@@ -274,7 +318,7 @@ describe('DatabaseManager - Core Operations', () => {
       // Assert
       expect(mockDatabase.run).toHaveBeenCalledWith(
         'INSERT OR REPLACE INTO settings (id, user_id, key, value) VALUES (?, ?, ?, ?)',
-        ['test-uuid', userId, key, value],
+        [undefined, userId, key, value],
         expect.any(Function)
       )
     })

@@ -9,7 +9,7 @@ import sqlite3 from 'sqlite3';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
-import { configManager } from '../config/ConfigManager';
+import { ConfigManager } from '../config/ConfigManager';
 
 export interface User {
   id: string;
@@ -53,24 +53,16 @@ export interface AppSettings {
 }
 
 export class DatabaseManager {
-  private static instance: DatabaseManager;
   private db: sqlite3.Database | null = null;
   private dbPath: string;
   private encryptionKey: string;
 
-  private constructor() {
-    const configDir = configManager.getConfigDir();
+  constructor(private configManager: ConfigManager) {
+    const configDir = this.configManager.getConfigDir();
     this.dbPath = path.join(configDir, 'database.db');
     
     // Encryption key will be initialized later in initialize() method
     this.encryptionKey = '';
-  }
-
-  static getInstance(): DatabaseManager {
-    if (!DatabaseManager.instance) {
-      DatabaseManager.instance = new DatabaseManager();
-    }
-    return DatabaseManager.instance;
   }
 
   /**
@@ -85,7 +77,7 @@ export class DatabaseManager {
       }
 
       // Ensure credentials directory exists
-      const credentialsDir = path.join(configManager.getConfigDir(), 'credentials');
+      const credentialsDir = path.join(this.configManager.getConfigDir(), 'credentials');
       if (!fs.existsSync(credentialsDir)) {
         fs.mkdirSync(credentialsDir, { recursive: true });
       }
@@ -264,7 +256,7 @@ export class DatabaseManager {
    * Get or create encryption key for sensitive data
    */
   private getOrCreateEncryptionKey(): string {
-    const keyPath = path.join(configManager.getConfigDir(), 'credentials', 'encryption.key');
+    const keyPath = path.join(this.configManager.getConfigDir(), 'credentials', 'encryption.key');
     
     if (fs.existsSync(keyPath)) {
       return fs.readFileSync(keyPath, 'utf8');
@@ -537,6 +529,3 @@ export class DatabaseManager {
     }
   }
 }
-
-// Export singleton instance
-export const databaseManager = DatabaseManager.getInstance();

@@ -10,11 +10,11 @@ import crypto from 'crypto';
 import { DatabaseManager } from '../database/DatabaseManager';
 import { AuthMiddleware } from '../auth/AuthMiddleware';
 
-const router = express.Router();
-const dbManager = DatabaseManager.getInstance();
-
-// Apply authentication to all routes
-router.use(AuthMiddleware.authenticate);
+export const createExportRouter = (dbManager: DatabaseManager, authMiddleware: AuthMiddleware) => {
+  const router = express.Router();
+  
+  // Apply authentication to all routes
+  router.use(authMiddleware.authenticate);
 
 /**
  * Export user data (accounts and settings) for authenticated user
@@ -152,4 +152,8 @@ router.post('/import', async (req: Request, res) => {
   }
 });
 
-export default router;
+  return router;
+};
+
+// Temporary backward compatibility
+export default createExportRouter;

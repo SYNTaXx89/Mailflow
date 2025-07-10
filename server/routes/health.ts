@@ -1,12 +1,17 @@
 import express from 'express';
 
-const router = express.Router();
-
-router.get('/', (_req, res) => {
-  res.json({ 
-    status: 'ok', 
-    timestamp: new Date().toISOString()
+export const createHealthRouter = () => {
+  const router = express.Router();
+  
+  router.get('/', (_req, res) => {
+    res.json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString()
+    });
   });
-});
+  
+  return router;
+};
 
-export default router;
+// Temporary backward compatibility
+export default createHealthRouter;

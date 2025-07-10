@@ -7,8 +7,8 @@
 
 import crypto from 'crypto';
 import { Request, Response } from 'express';
-import { configManager } from '../config/ConfigManager';
-import { databaseManager } from '../database/DatabaseManager';
+import { ConfigManager } from '../config/ConfigManager';
+import { DatabaseManager } from '../database/DatabaseManager';
 import { PasswordManager } from '../auth/PasswordManager';
 import { TokenManager } from '../auth/TokenManager';
 
@@ -44,14 +44,20 @@ export interface InstanceConfig {
 }
 
 export class SetupController {
+  constructor(
+    private configManager: ConfigManager,
+    private databaseManager: DatabaseManager,
+    private tokenManager: TokenManager
+  ) {}
+
   /**
    * Get current setup status
    */
-  static async getSetupStatus(req: Request, res: Response): Promise<void> {
+  async getSetupStatus(req: Request, res: Response): Promise<void> {
     try {
-      const isSetupCompleted = configManager.isSetupCompleted();
-      const instanceId = configManager.get('instanceId');
-      const version = configManager.get('version');
+      const isSetupCompleted = this.configManager.isSetupCompleted();
+      const instanceId = this.configManager.get('instanceId');
+      const version = this.configManager.get('version');
 
       if (isSetupCompleted) {
         res.json({
@@ -65,7 +71,7 @@ export class SetupController {
       }
 
       // Check if admin exists in database
-      const users = await databaseManager.getAllUsers();
+      const users = await this.databaseManager.getAllUsers();
       const adminExists = users.some(user => user.role === 'admin');
 
       let step: SetupStatus['step'] = 'welcome';
@@ -94,9 +100,9 @@ export class SetupController {
   /**
    * Initialize the setup process
    */
-  static async initializeSetup(req: Request, res: Response): Promise<void> {
+  async initializeSetup(req: Request, res: Response): Promise<void> {
     try {
-      const isSetupCompleted = configManager.isSetupCompleted();
+      const isSetupCompleted = this.configManager.isSetupCompleted();
       
       if (isSetupCompleted) {
         res.status(400).json({
@@ -107,7 +113,7 @@ export class SetupController {
       }
 
       // Ensure database is ready
-      const healthStatus = await databaseManager.getHealthStatus();
+      const healthStatus = await this.databaseManager.getHealthStatus();
       if (!healthStatus.healthy) {
         res.status(500).json({
           error: 'Database not ready',
@@ -119,7 +125,7 @@ export class SetupController {
       res.json({
         success: true,
         message: 'Setup initialization successful',
-        instanceId: configManager.get('instanceId'),
+        instanceId: this.configManager.get('instanceId'),
         nextStep: 'admin'
       });
 
@@ -136,8 +142,28 @@ export class SetupController {
   /**
    * Create admin account
    */
-  static async createAdmin(req: Request, res: Response): Promise<void> {
+  async createAdmin(req: Request, res: Response): Promise<void> {
     try {
+      // CHECK IF SETUP IS ALREADY COMPLETED
+      if (this.configManager.isSetupCompleted()) {
+        res.status(403).json({
+          error: 'Setup already completed',
+          message: 'Admin account can only be created during initial setup'
+        });
+        return;
+      }
+
+      // Check if ANY admin already exists
+      const users = await this.databaseManager.getAllUsers();
+      const adminExists = users.some(user => user.role === 'admin');
+      if (adminExists) {
+        res.status(403).json({
+          error: 'Admin already exists',
+          message: 'An admin account has already been created'
+        });
+        return;
+      }
+
       const { email, password, confirmPassword, instanceName }: AdminSetupData = req.body;
 
       // Validate input
@@ -178,12 +204,12 @@ export class SetupController {
         return;
       }
 
-      // Check if admin already exists
-      const existingAdmin = await databaseManager.getUserByEmail(email);
-      if (existingAdmin) {
+      // Check if this specific email is already taken
+      const existingUser = await this.databaseManager.getUserByEmail(email);
+      if (existingUser) {
         res.status(400).json({
-          error: 'Admin already exists',
-          message: 'An admin with this email already exists'
+          error: 'Email already exists',
+          message: 'A user with this email already exists'
         });
         return;
       }
@@ -193,15 +219,15 @@ export class SetupController {
 
       // Create admin user
       const adminId = crypto.randomUUID();
-      await databaseManager.createUser(adminId, email, passwordHash, 'admin');
+      await this.databaseManager.createUser(adminId, email, passwordHash, 'admin');
 
       // Update instance name if provided
       if (instanceName && instanceName.trim()) {
-        await configManager.set('instanceName', instanceName.trim());
+        await this.configManager.set('instanceName', instanceName.trim());
       }
 
       // Generate tokens for immediate login
-      const tokens = TokenManager.generateTokenPair(adminId, email, 'admin');
+      const tokens = this.tokenManager.generateTokenPair(adminId, email, 'admin');
 
       res.json({
         success: true,
@@ -228,7 +254,7 @@ export class SetupController {
   /**
    * Configure instance settings
    */
-  static async configureInstance(req: Request, res: Response): Promise<void> {
+  async configureInstance(req: Request, res: Response): Promise<void> {
     try {
       const config: InstanceConfig = req.body;
 
@@ -242,18 +268,18 @@ export class SetupController {
       }
 
       // Update configuration
-      await configManager.set('instanceName', config.instanceName);
+      await this.configManager.set('instanceName', config.instanceName);
       
       // Update features
       if (config.features) {
-        await configManager.setDeep('features.multiUser', config.features.multiUser);
-        await configManager.setDeep('features.invitations', config.features.invitations);
-        await configManager.setDeep('features.backups', config.features.backups);
+        await this.configManager.setDeep('features.multiUser', config.features.multiUser);
+        await this.configManager.setDeep('features.invitations', config.features.invitations);
+        await this.configManager.setDeep('features.backups', config.features.backups);
       }
 
       // Configure SMTP if provided
       if (config.smtp) {
-        await configManager.setDeep('smtp', config.smtp);
+        await this.configManager.setDeep('smtp', config.smtp);
       }
 
       res.json({
@@ -275,10 +301,10 @@ export class SetupController {
   /**
    * Complete setup process
    */
-  static async completeSetup(req: Request, res: Response): Promise<void> {
+  async completeSetup(req: Request, res: Response): Promise<void> {
     try {
       // Verify admin exists
-      const users = await databaseManager.getAllUsers();
+      const users = await this.databaseManager.getAllUsers();
       const admin = users.find(user => user.role === 'admin');
       
       if (!admin) {
@@ -290,14 +316,14 @@ export class SetupController {
       }
 
       // Mark setup as completed
-      await configManager.completeSetup(admin.email, admin.password_hash);
+      await this.configManager.completeSetup(admin.email, admin.password_hash);
 
       // Get final configuration
       const finalConfig = {
-        instanceId: configManager.get('instanceId'),
-        instanceName: configManager.get('instanceName'),
-        version: configManager.get('version'),
-        features: configManager.get('features'),
+        instanceId: this.configManager.get('instanceId'),
+        instanceName: this.configManager.get('instanceName'),
+        version: this.configManager.get('version'),
+        features: this.configManager.get('features'),
         completedAt: new Date().toISOString()
       };
 
@@ -321,7 +347,7 @@ export class SetupController {
   /**
    * Reset setup (for development/troubleshooting)
    */
-  static async resetSetup(req: Request, res: Response): Promise<void> {
+  async resetSetup(req: Request, res: Response): Promise<void> {
     try {
       // Only allow in development
       const isDevelopment = process.env.NODE_ENV !== 'production';
@@ -334,15 +360,15 @@ export class SetupController {
       }
 
       // Reset setup in configuration
-      await configManager.setDeep('setup.completed', false);
-      await configManager.setDeep('setup.completedAt', null);
+      await this.configManager.setDeep('setup.completed', false);
+      await this.configManager.setDeep('setup.completedAt', null);
 
       // Optionally clear admin (be careful!)
       const { clearAdmin } = req.body;
       if (clearAdmin) {
-        const users = await databaseManager.getAllUsers();
+        const users = await this.databaseManager.getAllUsers();
         for (const user of users) {
-          await databaseManager.deleteUser(user.id);
+          await this.databaseManager.deleteUser(user.id);
         }
         console.log('⚠️  All users cleared during setup reset');
       }

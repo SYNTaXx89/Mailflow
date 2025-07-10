@@ -1,32 +1,32 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
-// Mock dependencies BEFORE importing DatabaseManager
-vi.mock('sqlite3', () => {
-  const mockDatabase = {
-    run: vi.fn(),
-    get: vi.fn(),
-    all: vi.fn(),
-    close: vi.fn(),
-    serialize: vi.fn(),
-  }
-  
-  const Database = vi.fn().mockImplementation(() => mockDatabase)
-  
-  return {
-    default: { Database },
-    Database
-  }
-})
+// Create mock database instance
+const mockDatabase = {
+  run: vi.fn(),
+  get: vi.fn(),
+  all: vi.fn(),
+  close: vi.fn(),
+  serialize: vi.fn(),
+}
 
+// Mock sqlite3 module
+vi.mock('sqlite3', () => ({
+  default: {
+    Database: vi.fn().mockImplementation(() => mockDatabase),
+  },
+}))
+
+// Mock fs module
 vi.mock('fs', () => ({
   default: {
     existsSync: vi.fn().mockReturnValue(true),
     mkdirSync: vi.fn(),
-    readFileSync: vi.fn(),
+    readFileSync: vi.fn().mockReturnValue('test-key'),
     writeFileSync: vi.fn(),
   },
 }))
 
+// Mock crypto module
 vi.mock('crypto', () => ({
   default: {
     randomBytes: vi.fn().mockReturnValue(Buffer.from('test-key')),
@@ -36,43 +36,57 @@ vi.mock('crypto', () => ({
   },
 }))
 
+// Mock ConfigManager class
+const mockConfigManagerInstance = {
+  getConfigDir: vi.fn().mockReturnValue('/test/config'),
+  getDeep: vi.fn(),
+  get: vi.fn(),
+  set: vi.fn(),
+  initialize: vi.fn(),
+  isSetupCompleted: vi.fn().mockReturnValue(false),
+  save: vi.fn(),
+  load: vi.fn(),
+}
+
 vi.mock('../../config/ConfigManager', () => ({
-  configManager: {
-    getDeep: vi.fn(),
-    getConfigDir: vi.fn().mockReturnValue('/test/config'),
-  },
+  ConfigManager: vi.fn().mockImplementation(() => mockConfigManagerInstance),
 }))
 
 // Import after mocking  
 import { DatabaseManager, User, Account, Email, AppSettings } from '../DatabaseManager'
+import { ConfigManager } from '../../config/ConfigManager'
 import sqlite3 from 'sqlite3'
 import fs from 'fs'
 import crypto from 'crypto'
 
 describe('DatabaseManager', () => {
   let databaseManager: DatabaseManager
-  let mockDatabase: any
+  let mockConfigManager: any
 
   beforeEach(async () => {
-    // Setup mocks
-    mockDatabase = {
-      run: vi.fn(),
+    // Create mock ConfigManager instance manually
+    mockConfigManager = {
+      getConfigDir: vi.fn().mockReturnValue('/test/config'),
+      getDeep: vi.fn(),
       get: vi.fn(),
-      all: vi.fn(),
-      close: vi.fn(),
-      serialize: vi.fn(),
+      set: vi.fn(),
+      initialize: vi.fn(),
+      isSetupCompleted: vi.fn().mockReturnValue(false),
+      save: vi.fn(),
+      load: vi.fn(),
     }
-
-    vi.mocked(sqlite3.Database).mockImplementation(() => mockDatabase)
-    vi.mocked(fs.existsSync).mockReturnValue(true)
-    vi.mocked(fs.mkdirSync).mockReturnValue(undefined)
-    vi.mocked(crypto.randomBytes).mockReturnValue(Buffer.from('test-key'))
-
-    // Get fresh instance - we need to reset singleton for testing
-    ;(DatabaseManager as any).instance = undefined
-    databaseManager = DatabaseManager.getInstance()
     
-    // Clear all mocks
+    // Create DatabaseManager with mocked ConfigManager
+    databaseManager = new DatabaseManager(mockConfigManager)
+    
+    // Mock the database property to simulate initialization
+    ;(databaseManager as any).db = mockDatabase
+    ;(databaseManager as any).encryptionKey = 'test-key'
+    
+    // Mock crypto.randomUUID for setSetting test
+    vi.mocked(crypto.randomUUID).mockReturnValue('test-uuid')
+    
+    // Clear database mock calls after instance creation
     vi.clearAllMocks()
   })
 
@@ -80,14 +94,30 @@ describe('DatabaseManager', () => {
     vi.resetAllMocks()
   })
 
-  describe('Singleton Pattern', () => {
-    it('should return same instance when called multiple times', () => {
-      // Act
-      const instance1 = DatabaseManager.getInstance()
-      const instance2 = DatabaseManager.getInstance()
-
-      // Assert
-      expect(instance1).toBe(instance2)
+  describe('Constructor', () => {
+    it('should create DatabaseManager instance with ConfigManager', () => {
+      const configManager = {
+        getConfigDir: vi.fn().mockReturnValue('/test/config'),
+        getDeep: vi.fn(),
+        get: vi.fn(),
+        set: vi.fn(),
+        initialize: vi.fn(),
+      }
+      const instance = new DatabaseManager(configManager)
+      expect(instance).toBeInstanceOf(DatabaseManager)
+    })
+    
+    it('should create different instances when called multiple times', () => {
+      const configManager = {
+        getConfigDir: vi.fn().mockReturnValue('/test/config'),
+        getDeep: vi.fn(),
+        get: vi.fn(),
+        set: vi.fn(),
+        initialize: vi.fn(),
+      }
+      const instance1 = new DatabaseManager(configManager)
+      const instance2 = new DatabaseManager(configManager)
+      expect(instance1).not.toBe(instance2)
     })
   })
 
@@ -256,7 +286,7 @@ describe('DatabaseManager', () => {
           },
         ]
 
-        mockDatabase.all.mockImplementation((sql: string, callback: Function) => {
+        mockDatabase.all.mockImplementation((sql: string, params: any[], callback: Function) => {
           callback(null, expectedUsers)
         })
 
@@ -266,6 +296,7 @@ describe('DatabaseManager', () => {
         // Assert
         expect(mockDatabase.all).toHaveBeenCalledWith(
           'SELECT * FROM users ORDER BY created_at DESC',
+          [],
           expect.any(Function)
         )
         expect(result).toEqual(expectedUsers)
@@ -273,7 +304,7 @@ describe('DatabaseManager', () => {
 
       it('should return empty array when no users', async () => {
         // Arrange
-        mockDatabase.all.mockImplementation((sql: string, callback: Function) => {
+        mockDatabase.all.mockImplementation((sql: string, params: any[], callback: Function) => {
           callback(null, [])
         })
 
@@ -770,8 +801,8 @@ describe('DatabaseManager', () => {
 
         // Assert
         expect(mockDatabase.run).toHaveBeenCalledWith(
-          'INSERT OR REPLACE INTO settings (user_id, key, value) VALUES (?, ?, ?)',
-          [userId, key, value],
+          'INSERT OR REPLACE INTO settings (id, user_id, key, value) VALUES (?, ?, ?, ?)',
+          ['test-uuid', userId, key, value],
           expect.any(Function)
         )
       })
@@ -812,11 +843,11 @@ describe('DatabaseManager', () => {
 
         // Assert
         expect(mockDatabase.get).toHaveBeenCalledWith(
-          'SELECT * FROM settings WHERE user_id = ? AND key = ?',
+          'SELECT value FROM settings WHERE user_id = ? AND key = ?',
           [userId, key],
           expect.any(Function)
         )
-        expect(result).toEqual(expectedSetting)
+        expect(result).toEqual(expectedSetting.value)
       })
 
       it('should return undefined when setting not found', async () => {
@@ -836,39 +867,39 @@ describe('DatabaseManager', () => {
       })
     })
 
-    describe('getUserSettings', () => {
-      it('should return all settings for user', async () => {
+    describe('getAllSettings', () => {
+      it('should return all settings for user as key-value pairs', async () => {
         // Arrange
         const userId = 'user123'
-        const expectedSettings: AppSettings[] = [
+        const expectedSettingsArray = [
           {
-            id: 'setting1',
-            user_id: userId,
             key: 'theme',
             value: 'dark',
           },
           {
-            id: 'setting2',
-            user_id: userId,
             key: 'language',
             value: 'en',
           },
         ]
+        const expectedResult = {
+          theme: 'dark',
+          language: 'en',
+        }
 
         mockDatabase.all.mockImplementation((sql: string, params: any[], callback: Function) => {
-          callback(null, expectedSettings)
+          callback(null, expectedSettingsArray)
         })
 
         // Act
-        const result = await databaseManager.getUserSettings(userId)
+        const result = await databaseManager.getAllSettings(userId)
 
         // Assert
         expect(mockDatabase.all).toHaveBeenCalledWith(
-          'SELECT * FROM settings WHERE user_id = ? ORDER BY key',
+          'SELECT key, value FROM settings WHERE user_id = ?',
           [userId],
           expect.any(Function)
         )
-        expect(result).toEqual(expectedSettings)
+        expect(result).toEqual(expectedResult)
       })
     })
   })

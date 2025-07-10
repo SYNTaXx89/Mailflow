@@ -7,12 +7,13 @@
 
 import express from 'express';
 import crypto from 'crypto';
-import { databaseManager } from '../database/DatabaseManager';
+import { DatabaseManager } from '../database/DatabaseManager';
 import { PasswordManager } from '../auth/PasswordManager';
 import { TokenManager } from '../auth/TokenManager';
 import { AuthMiddleware } from '../auth/AuthMiddleware';
 
-const router = express.Router();
+export const createAuthRouter = (databaseManager: DatabaseManager, tokenManager: TokenManager, authMiddleware: AuthMiddleware) => {
+  const router = express.Router();
 
 /**
  * POST /auth/login
@@ -57,7 +58,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Generate token pair
-    const tokens = TokenManager.generateTokenPair(user.id, user.email, user.role);
+    const tokens = tokenManager.generateTokenPair(user.id, user.email, user.role);
 
     // Return success response
     res.json({
@@ -97,7 +98,7 @@ router.post('/refresh', async (req, res) => {
     }
 
     // Verify refresh token
-    const payload = TokenManager.verifyRefreshToken(refreshToken);
+    const payload = tokenManager.verifyRefreshToken(refreshToken);
 
     // Verify user still exists
     const user = await databaseManager.getUserById(payload.userId);
@@ -109,7 +110,7 @@ router.post('/refresh', async (req, res) => {
     }
 
     // Generate new token pair
-    const tokens = TokenManager.generateTokenPair(user.id, user.email, user.role);
+    const tokens = tokenManager.generateTokenPair(user.id, user.email, user.role);
 
     res.json({
       success: true,
@@ -141,7 +142,7 @@ router.post('/refresh', async (req, res) => {
  * POST /auth/logout
  * Invalidate user session (placeholder for future token blacklisting)
  */
-router.post('/logout', AuthMiddleware.authenticate, async (req, res) => {
+router.post('/logout', authMiddleware.authenticate, async (req, res) => {
   try {
     // For now, just log the logout
     // In the future, we could implement token blacklisting
@@ -165,7 +166,7 @@ router.post('/logout', AuthMiddleware.authenticate, async (req, res) => {
  * GET /auth/me
  * Get current user information
  */
-router.get('/me', AuthMiddleware.authenticate, async (req, res) => {
+router.get('/me', authMiddleware.authenticate, async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({
@@ -205,7 +206,7 @@ router.get('/me', AuthMiddleware.authenticate, async (req, res) => {
  * POST /auth/change-password
  * Change user password
  */
-router.post('/change-password', AuthMiddleware.authenticate, async (req, res) => {
+router.post('/change-password', authMiddleware.authenticate, async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({
@@ -273,4 +274,8 @@ router.post('/change-password', AuthMiddleware.authenticate, async (req, res) =>
   }
 });
 
-export default router;
+  return router;
+};
+
+// Temporary backward compatibility
+export default createAuthRouter;

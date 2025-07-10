@@ -9,11 +9,11 @@ import express, { Request, Response } from 'express';
 import { DatabaseManager } from '../database/DatabaseManager';
 import { AuthMiddleware } from '../auth/AuthMiddleware';
 
-const router = express.Router();
-const dbManager = DatabaseManager.getInstance();
-
-// Apply authentication to all routes
-router.use(AuthMiddleware.authenticate);
+export const createSettingsRouter = (dbManager: DatabaseManager, authMiddleware: AuthMiddleware) => {
+  const router = express.Router();
+  
+  // Apply authentication to all routes
+  router.use(authMiddleware.authenticate);
 
 /**
  * Get user settings for authenticated user
@@ -118,4 +118,8 @@ router.get('/:key', async (req: Request, res) => {
   }
 });
 
-export default router;
+  return router;
+};
+
+// Temporary backward compatibility
+export default createSettingsRouter;

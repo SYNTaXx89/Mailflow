@@ -7,6 +7,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { TokenManager, TokenPayload } from './TokenManager';
+import { DatabaseManager } from '../database/DatabaseManager';
 
 // Extend Express Request type to include user data and account
 declare global {
@@ -19,17 +20,22 @@ declare global {
 }
 
 export class AuthMiddleware {
+  constructor(
+    private tokenManager: TokenManager,
+    private databaseManager: DatabaseManager
+  ) {}
+
   /**
    * Middleware to authenticate requests using JWT tokens
    */
-  static authenticate = (req: Request, res: Response, next: NextFunction): void => {
+  authenticate = (req: Request, res: Response, next: NextFunction): void => {
     try {
       console.log(`🔐 AuthMiddleware: Checking authentication for ${req.method} ${req.path}`);
       
       const authHeader = req.headers.authorization;
       console.log(`🔑 Auth header:`, authHeader ? `${authHeader.substring(0, 30)}...` : 'MISSING');
       
-      const token = TokenManager.extractTokenFromHeader(authHeader);
+      const token = this.tokenManager.extractTokenFromHeader(authHeader);
       console.log(`🎫 Extracted token:`, token ? `${token.substring(0, 20)}...` : 'NONE');
 
       if (!token) {
@@ -42,7 +48,7 @@ export class AuthMiddleware {
       }
 
       console.log(`✅ Verifying token...`);
-      const payload = TokenManager.verifyAccessToken(token);
+      const payload = this.tokenManager.verifyAccessToken(token);
       console.log(`👤 Token valid for user:`, payload.email, `(${payload.role})`);
       
       req.user = payload;
@@ -74,7 +80,7 @@ export class AuthMiddleware {
   /**
    * Middleware to require admin role
    */
-  static requireAdmin = (req: Request, res: Response, next: NextFunction): void => {
+  requireAdmin = (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
       res.status(401).json({
         error: 'Authentication required',
@@ -97,7 +103,7 @@ export class AuthMiddleware {
   /**
    * Middleware to require user to be accessing their own resources
    */
-  static requireSelfOrAdmin = (userIdParam: string = 'userId') => {
+  requireSelfOrAdmin = (userIdParam: string = 'userId') => {
     return (req: Request, res: Response, next: NextFunction): void => {
       if (!req.user) {
         res.status(401).json({
@@ -126,13 +132,13 @@ export class AuthMiddleware {
   /**
    * Optional authentication middleware (doesn't fail if no token)
    */
-  static optionalAuth = (req: Request, res: Response, next: NextFunction): void => {
+  optionalAuth = (req: Request, res: Response, next: NextFunction): void => {
     try {
       const authHeader = req.headers.authorization;
-      const token = TokenManager.extractTokenFromHeader(authHeader);
+      const token = this.tokenManager.extractTokenFromHeader(authHeader);
 
       if (token) {
-        const payload = TokenManager.verifyAccessToken(token);
+        const payload = this.tokenManager.verifyAccessToken(token);
         req.user = payload;
       }
       
@@ -146,7 +152,7 @@ export class AuthMiddleware {
   /**
    * Rate limiting based on user (authenticated users get higher limits)
    */
-  static createRateLimitKey = (req: Request): string => {
+  createRateLimitKey = (req: Request): string => {
     if (req.user) {
       return `user:${req.user.userId}`;
     }
@@ -158,7 +164,7 @@ export class AuthMiddleware {
   /**
    * Middleware to check if setup is completed (for setup routes)
    */
-  static requireSetupCompleted = (req: Request, res: Response, next: NextFunction): void => {
+  requireSetupCompleted = (req: Request, res: Response, next: NextFunction): void => {
     // This will be implemented when we have setup detection
     // For now, assume setup is always required to be completed for protected routes
     next();
@@ -167,7 +173,7 @@ export class AuthMiddleware {
   /**
    * Middleware to allow access only during setup phase
    */
-  static requireSetupMode = (req: Request, res: Response, next: NextFunction): void => {
+  requireSetupMode = (req: Request, res: Response, next: NextFunction): void => {
     // This will be implemented in Phase 2 when we add setup detection
     next();
   };
@@ -176,7 +182,7 @@ export class AuthMiddleware {
    * Middleware to verify user owns the account specified in params
    * Automatically checks :accountId parameter and validates ownership
    */
-  static requireAccountOwnership = (accountIdParam: string = 'accountId') => {
+  requireAccountOwnership = (accountIdParam: string = 'accountId') => {
     return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       try {
         // First ensure user is authenticated
@@ -198,12 +204,8 @@ export class AuthMiddleware {
           return;
         }
 
-        // Import here to avoid circular dependency
-        const { DatabaseManager } = await import('../database/DatabaseManager');
-        const dbManager = DatabaseManager.getInstance();
-
         // Get account and verify ownership
-        const account = await dbManager.getAccountById(accountId);
+        const account = await this.databaseManager.getAccountById(accountId);
         if (!account) {
           res.status(404).json({
             success: false,
@@ -242,7 +244,7 @@ export class AuthMiddleware {
   /**
    * Create error response for authentication failures
    */
-  private static createAuthError(message: string, statusCode: number = 401) {
+  private createAuthError(message: string, statusCode: number = 401) {
     return {
       error: 'Authentication failed',
       message,

@@ -8,13 +8,17 @@ import express from 'express';
 import { EmailCacheService, CachedEmail } from '../cache/EmailCacheService';
 import { AuthMiddleware } from '../auth/AuthMiddleware';
 
-const router = express.Router();
+export function createCacheRouter(
+  emailCacheService: EmailCacheService,
+  authMiddleware: AuthMiddleware
+): express.Router {
+  const router = express.Router();
 
-// Apply authentication middleware to all cache routes
-router.use(AuthMiddleware.authenticate);
+  // Apply authentication middleware to all cache routes
+  router.use(authMiddleware.authenticate);
 
 // GET /api/cache/:accountId/emails
-router.get('/:accountId/emails', AuthMiddleware.requireAccountOwnership(), async (req, res) => {
+router.get('/:accountId/emails', authMiddleware.requireAccountOwnership(), async (req, res) => {
   try {
     const { accountId } = req.params;
     const { limit } = req.query;
@@ -22,7 +26,7 @@ router.get('/:accountId/emails', AuthMiddleware.requireAccountOwnership(), async
     console.log(`📂 Getting cached emails for account: ${accountId}`);
     
     
-    const emails = await EmailCacheService.getCachedEmails(
+    const emails = await emailCacheService.getCachedEmails(
       accountId, 
       limit ? parseInt(limit as string) : undefined
     );
@@ -49,7 +53,7 @@ router.get('/email/:emailId/content', async (req, res) => {
     
     console.log(`📄 Getting cached content for email: ${emailId}`);
     
-    const content = await EmailCacheService.getCachedEmailContent(emailId);
+    const content = await emailCacheService.getCachedEmailContent(emailId);
     
     if (!content) {
       return res.status(404).json({
@@ -73,7 +77,7 @@ router.get('/email/:emailId/content', async (req, res) => {
 });
 
 // POST /api/cache/:accountId/emails
-router.post('/:accountId/emails', AuthMiddleware.requireAccountOwnership(), async (req, res) => {
+router.post('/:accountId/emails', authMiddleware.requireAccountOwnership(), async (req, res) => {
   try {
     const { accountId } = req.params;
     const { emails } = req.body;
@@ -88,7 +92,7 @@ router.post('/:accountId/emails', AuthMiddleware.requireAccountOwnership(), asyn
     
     console.log(`💾 Storing ${emails.length} emails in cache for account: ${accountId}`);
     
-    await EmailCacheService.storeEmails(accountId, emails);
+    await emailCacheService.storeEmails(accountId, emails);
     
     res.json({
       success: true,
@@ -112,7 +116,7 @@ router.post('/email/:emailId/read', async (req, res) => {
     
     console.log(`📖 Updating read status for email ${emailId}: ${isRead ? 'READ' : 'unread'}`);
     
-    await EmailCacheService.updateReadStatus(emailId, isRead);
+    await emailCacheService.updateReadStatus(emailId, isRead);
     
     res.json({
       success: true,
@@ -136,7 +140,7 @@ router.delete('/email/:emailId', async (req, res) => {
     
     console.log(`🗑️ Removing email from cache: ${emailId}`);
     
-    await EmailCacheService.removeEmail(emailId);
+    await emailCacheService.removeEmail(emailId);
     
     res.json({
       success: true,
@@ -153,7 +157,7 @@ router.delete('/email/:emailId', async (req, res) => {
 });
 
 // GET /api/cache/:accountId/search?q=query
-router.get('/:accountId/search', AuthMiddleware.requireAccountOwnership(), async (req, res) => {
+router.get('/:accountId/search', authMiddleware.requireAccountOwnership(), async (req, res) => {
   try {
     const { accountId } = req.params;
     const { q: query } = req.query;
@@ -168,7 +172,7 @@ router.get('/:accountId/search', AuthMiddleware.requireAccountOwnership(), async
     
     console.log(`🔍 Searching cached emails for account ${accountId}, query: "${query}"`);
     
-    const results = await EmailCacheService.searchCachedEmails(accountId, query);
+    const results = await emailCacheService.searchCachedEmails(accountId, query);
     
     res.json({
       success: true,
@@ -187,14 +191,14 @@ router.get('/:accountId/search', AuthMiddleware.requireAccountOwnership(), async
 });
 
 // GET /api/cache/:accountId/stats
-router.get('/:accountId/stats', AuthMiddleware.requireAccountOwnership(), async (req, res) => {
+router.get('/:accountId/stats', authMiddleware.requireAccountOwnership(), async (req, res) => {
   try {
     const { accountId } = req.params;
     
     
     console.log(`📊 Getting cache stats for account: ${accountId}`);
     
-    const stats = await EmailCacheService.getCacheStats(accountId);
+    const stats = await emailCacheService.getCacheStats(accountId);
     
     res.json({
       success: true,
@@ -211,14 +215,14 @@ router.get('/:accountId/stats', AuthMiddleware.requireAccountOwnership(), async 
 });
 
 // DELETE /api/cache/:accountId
-router.delete('/:accountId', AuthMiddleware.requireAccountOwnership(), async (req, res) => {
+router.delete('/:accountId', authMiddleware.requireAccountOwnership(), async (req, res) => {
   try {
     const { accountId } = req.params;
     
     
     console.log(`🧹 Clearing cache for account: ${accountId}`);
     
-    await EmailCacheService.clearAccountCache(accountId);
+    await emailCacheService.clearAccountCache(accountId);
     
     res.json({
       success: true,
@@ -235,11 +239,11 @@ router.delete('/:accountId', AuthMiddleware.requireAccountOwnership(), async (re
 });
 
 // POST /api/cache/cleanup (Admin only)
-router.post('/cleanup', AuthMiddleware.requireAdmin, async (req, res) => {
+router.post('/cleanup', authMiddleware.requireAdmin, async (req, res) => {
   try {
     console.log(`🧹 Starting cache cleanup (removing emails older than 30 days)`);
     
-    const result = await EmailCacheService.cleanOldEmails();
+    const result = await emailCacheService.cleanOldEmails();
     
     res.json({
       success: true,
@@ -261,7 +265,7 @@ router.get('/health', async (req, res) => {
   try {
     console.log(`🏥 Checking cache health status`);
     
-    const health = await EmailCacheService.getCacheHealthStatus();
+    const health = await emailCacheService.getCacheHealthStatus();
     
     res.json({
       success: true,
@@ -276,4 +280,8 @@ router.get('/health', async (req, res) => {
   }
 });
 
-export default router;
+  return router;
+}
+
+// Temporary backward compatibility
+export default createCacheRouter;

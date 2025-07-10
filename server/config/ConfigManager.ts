@@ -49,23 +49,15 @@ export interface MailflowConfig {
 }
 
 export class ConfigManager {
-  private static instance: ConfigManager;
   private config: MailflowConfig | null = null;
   private readonly configPath: string;
   private readonly configDir: string;
 
-  private constructor() {
+  constructor() {
     // Use Docker-friendly data directory
     const dataDir = process.env.MAILFLOW_DATA_DIR || path.join(process.cwd(), '.mailflow');
     this.configDir = dataDir;
     this.configPath = path.join(this.configDir, 'config.json');
-  }
-
-  static getInstance(): ConfigManager {
-    if (!ConfigManager.instance) {
-      ConfigManager.instance = new ConfigManager();
-    }
-    return ConfigManager.instance;
   }
 
   /**
@@ -291,6 +283,3 @@ export class ConfigManager {
     return this.configDir;
   }
 }
-
-// Export singleton instance
-export const configManager = ConfigManager.getInstance();

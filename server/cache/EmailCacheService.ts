@@ -12,7 +12,7 @@
  * - Cache maintenance and cleanup
  */
 
-import { databaseManager } from '../../server/database/DatabaseManager';
+import { DatabaseManager } from '../../server/database/DatabaseManager';
 
 export interface CachedEmail {
   id: string;
@@ -48,6 +48,11 @@ export interface CacheStats {
 export class EmailCacheService {
   private static readonly RETENTION_DAYS = 30;
   private static readonly CLEANUP_BATCH_SIZE = 100;
+  private databaseManager: DatabaseManager;
+
+  constructor(databaseManager: DatabaseManager) {
+    this.databaseManager = databaseManager;
+  }
 
   // ============================================================================
   // CACHE RETRIEVAL OPERATIONS
@@ -56,11 +61,11 @@ export class EmailCacheService {
   /**
    * Get cached emails for an account (newest first)
    */
-  static async getCachedEmails(accountId: string, limit?: number): Promise<CachedEmail[]> {
+  async getCachedEmails(accountId: string, limit?: number): Promise<CachedEmail[]> {
     try {
       console.log(`📂 Getting cached emails for account: ${accountId}, limit: ${limit || 'all'}`);
       
-      const dbEmails = await databaseManager.getEmailsByAccountId(accountId, limit || 1000);
+      const dbEmails = await this.databaseManager.getEmailsByAccountId(accountId, limit || 1000);
       
       const cachedEmails = dbEmails.map(dbEmail => this.convertDbEmailToCachedEmail(dbEmail));
       
@@ -78,11 +83,11 @@ export class EmailCacheService {
   /**
    * Get cached email content by email ID
    */
-  static async getCachedEmailContent(emailId: string): Promise<CachedEmailContent | null> {
+  async getCachedEmailContent(emailId: string): Promise<CachedEmailContent | null> {
     try {
       console.log(`📄 Getting cached content for email: ${emailId}`);
       
-      const dbEmail = await databaseManager.getEmailById(emailId);
+      const dbEmail = await this.databaseManager.getEmailById(emailId);
       if (!dbEmail) {
         console.log(`📭 No cached content found for email: ${emailId}`);
         return null;
@@ -135,7 +140,7 @@ export class EmailCacheService {
   /**
    * Get cached email by UID for an account
    */
-  static async getCachedEmailByUID(accountId: string, uid: number): Promise<CachedEmail | null> {
+  async getCachedEmailByUID(accountId: string, uid: number): Promise<CachedEmail | null> {
     try {
       const allEmails = await this.getCachedEmails(accountId);
       const email = allEmails.find(email => email.uid === uid);
@@ -160,7 +165,7 @@ export class EmailCacheService {
   /**
    * Store emails in cache (batch operation) - FIXED: No longer clears existing cache
    */
-  static async storeEmails(accountId: string, emails: CachedEmail[]): Promise<void> {
+  async storeEmails(accountId: string, emails: CachedEmail[]): Promise<void> {
     try {
       console.log(`💾 Storing ${emails.length} emails in cache for account: ${accountId}`);
       
@@ -177,7 +182,7 @@ export class EmailCacheService {
   /**
    * Smart merge emails with existing cache (preserves existing emails)
    */
-  static async mergeEmails(accountId: string, newEmails: CachedEmail[]): Promise<void> {
+  async mergeEmails(accountId: string, newEmails: CachedEmail[]): Promise<void> {
     try {
       console.log(`🔄 Smart merging ${newEmails.length} emails for account: ${accountId}`);
       
@@ -212,7 +217,7 @@ export class EmailCacheService {
    * Replace all emails in cache (destructive operation - use sparingly)
    * Only use for account initialization or when cache corruption is detected
    */
-  static async replaceAllEmails(accountId: string, emails: CachedEmail[]): Promise<void> {
+  async replaceAllEmails(accountId: string, emails: CachedEmail[]): Promise<void> {
     try {
       console.log(`🗑️ DESTRUCTIVE: Replacing all emails in cache for account: ${accountId}`);
       
@@ -237,7 +242,7 @@ export class EmailCacheService {
   /**
    * Store single email in cache
    */
-  static async storeSingleEmail(email: CachedEmail): Promise<void> {
+  async storeSingleEmail(email: CachedEmail): Promise<void> {
     try {
       const dbEmail = {
         id: email.id,
@@ -253,7 +258,7 @@ export class EmailCacheService {
         message_id: email.messageId
       };
 
-      await databaseManager.createEmailSafe(dbEmail);
+      await this.databaseManager.createEmailSafe(dbEmail);
       console.log(`💾 Stored email in cache: ${email.subject} (UID: ${email.uid})`);
     } catch (error) {
       console.error(`❌ Error storing single email in cache:`, error);
@@ -264,7 +269,7 @@ export class EmailCacheService {
   /**
    * Store email content (full text/html)
    */
-  static async storeEmailContent(emailId: string, content: CachedEmailContent): Promise<void> {
+  async storeEmailContent(emailId: string, content: CachedEmailContent): Promise<void> {
     try {
       console.log(`💾 Storing full content for email: ${emailId}`);
       console.log(`📄 Content analysis - Text: ${content.textContent?.length || 0} chars, HTML: ${content.htmlContent?.length || 0} chars`);
@@ -277,7 +282,7 @@ export class EmailCacheService {
       };
       
       // Update the existing email record with full content
-      await databaseManager.updateEmail(emailId, {
+      await this.databaseManager.updateEmail(emailId, {
         full_body: JSON.stringify(contentData), // Store as JSON to preserve both text and HTML
       });
       
@@ -295,11 +300,11 @@ export class EmailCacheService {
   /**
    * Update read status for an email
    */
-  static async updateReadStatus(emailId: string, isRead: boolean): Promise<void> {
+  async updateReadStatus(emailId: string, isRead: boolean): Promise<void> {
     try {
       console.log(`📖 Updating read status for email ${emailId}: ${isRead ? 'READ' : 'UNREAD'}`);
       
-      await databaseManager.updateEmail(emailId, { is_read: isRead });
+      await this.databaseManager.updateEmail(emailId, { is_read: isRead });
       
       console.log(`✅ Updated read status for email ${emailId}: ${isRead ? 'READ' : 'UNREAD'}`);
     } catch (error) {
@@ -311,11 +316,11 @@ export class EmailCacheService {
   /**
    * Update attachment flag for an email
    */
-  static async updateEmailAttachmentFlag(emailId: string, hasAttachments: boolean): Promise<void> {
+  async updateEmailAttachmentFlag(emailId: string, hasAttachments: boolean): Promise<void> {
     try {
       console.log(`📎 Updating attachment flag for email ${emailId}: ${hasAttachments}`);
       
-      await databaseManager.updateEmail(emailId, { has_attachments: hasAttachments });
+      await this.databaseManager.updateEmail(emailId, { has_attachments: hasAttachments });
       
       console.log(`✅ Updated attachment flag for email ${emailId}: ${hasAttachments}`);
     } catch (error) {
@@ -327,11 +332,11 @@ export class EmailCacheService {
   /**
    * Remove email from cache
    */
-  static async removeEmail(emailId: string): Promise<void> {
+  async removeEmail(emailId: string): Promise<void> {
     try {
       console.log(`🗑️ Removing email from cache: ${emailId}`);
       
-      await databaseManager.deleteEmail(emailId);
+      await this.databaseManager.deleteEmail(emailId);
       
       console.log(`✅ Removed email from cache: ${emailId}`);
     } catch (error) {
@@ -343,11 +348,11 @@ export class EmailCacheService {
   /**
    * Clear all cached emails for an account
    */
-  static async clearAccountCache(accountId: string): Promise<void> {
+  async clearAccountCache(accountId: string): Promise<void> {
     try {
       console.log(`🧹 Clearing cache for account: ${accountId}`);
       
-      await databaseManager.clearEmailsByAccountId(accountId);
+      await this.databaseManager.clearEmailsByAccountId(accountId);
       
       console.log(`✅ Cleared cache for account: ${accountId}`);
     } catch (error) {
@@ -363,7 +368,7 @@ export class EmailCacheService {
   /**
    * Search cached emails by query
    */
-  static async searchCachedEmails(accountId: string, query: string): Promise<CachedEmail[]> {
+  async searchCachedEmails(accountId: string, query: string): Promise<CachedEmail[]> {
     try {
       console.log(`🔍 Searching cached emails for account ${accountId}, query: "${query}"`);
       
@@ -394,7 +399,7 @@ export class EmailCacheService {
   /**
    * Search cached emails by sender
    */
-  static async searchCachedEmailsBySender(accountId: string, senderEmail: string): Promise<CachedEmail[]> {
+  async searchCachedEmailsBySender(accountId: string, senderEmail: string): Promise<CachedEmail[]> {
     try {
       console.log(`🔍 Searching cached emails by sender for account ${accountId}: ${senderEmail}`);
       
@@ -414,7 +419,7 @@ export class EmailCacheService {
   /**
    * Search cached emails by date range
    */
-  static async searchCachedEmailsByDateRange(
+  async searchCachedEmailsByDateRange(
     accountId: string, 
     startDate: Date, 
     endDate: Date
@@ -443,12 +448,12 @@ export class EmailCacheService {
   /**
    * Clean old emails (older than 30 days)
    */
-  static async cleanOldEmails(): Promise<{ deletedCount: number; errors: number }> {
+  async cleanOldEmails(): Promise<{ deletedCount: number; errors: number }> {
     try {
-      console.log(`🧹 Starting cleanup of emails older than ${this.RETENTION_DAYS} days`);
+      console.log(`🧹 Starting cleanup of emails older than ${EmailCacheService.RETENTION_DAYS} days`);
       
       const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - this.RETENTION_DAYS);
+      cutoffDate.setDate(cutoffDate.getDate() - EmailCacheService.RETENTION_DAYS);
       
       let deletedCount = 0;
       let errors = 0;
@@ -470,7 +475,7 @@ export class EmailCacheService {
   /**
    * Get cache statistics for an account
    */
-  static async getCacheStats(accountId: string): Promise<CacheStats> {
+  async getCacheStats(accountId: string): Promise<CacheStats> {
     try {
       console.log(`📊 Getting cache statistics for account: ${accountId}`);
       
@@ -507,7 +512,7 @@ export class EmailCacheService {
   /**
    * Get overall cache health status
    */
-  static async getCacheHealthStatus(): Promise<{
+  async getCacheHealthStatus(): Promise<{
     healthy: boolean;
     totalEmails: number;
     accountsWithCache: string[];
@@ -544,7 +549,7 @@ export class EmailCacheService {
   /**
    * Convert database email format to cache email format
    */
-  private static convertDbEmailToCachedEmail(dbEmail: any): CachedEmail {
+  private convertDbEmailToCachedEmail(dbEmail: any): CachedEmail {
     // Parse sender string "Name <email@domain.com>"
     const senderParts = this.parseEmailAddress(dbEmail.sender);
     const recipientParts = this.parseEmailAddress(dbEmail.recipient);
@@ -569,7 +574,7 @@ export class EmailCacheService {
   /**
    * Parse email address string "Name <email@domain.com>" into components
    */
-  private static parseEmailAddress(emailString: string): { name: string; email: string } {
+  private parseEmailAddress(emailString: string): { name: string; email: string } {
     if (!emailString) {
       return { name: 'Unknown', email: '' };
     }
@@ -592,14 +597,14 @@ export class EmailCacheService {
   /**
    * Generate cache key for an email
    */
-  private static generateCacheKey(accountId: string, uid: number): string {
+  private generateCacheKey(accountId: string, uid: number): string {
     return `${accountId}:${uid}`;
   }
 
   /**
    * Validate email data before caching
    */
-  private static validateEmailData(email: CachedEmail): boolean {
+  private validateEmailData(email: CachedEmail): boolean {
     return !!(
       email.id &&
       email.accountId &&

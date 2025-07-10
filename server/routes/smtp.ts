@@ -15,7 +15,8 @@ import { SmtpService, EmailData, EmailAttachmentData } from '../services/SmtpSer
 import { Account } from '../../src/types';
 import { AuthMiddleware } from '../auth/AuthMiddleware';
 
-const router = Router();
+export const createSmtpRouter = (authMiddleware: AuthMiddleware) => {
+  const router = Router();
 
 // Configure multer for file uploads
 const upload = multer({ 
@@ -41,7 +42,7 @@ const upload = multer({
  * POST /api/smtp/send
  * Send an email using account SMTP settings
  */
-router.post('/send', AuthMiddleware.authenticate, upload.array('attachments'), async (req: Request, res: Response) => {
+router.post('/send', authMiddleware.authenticate, upload.array('attachments'), async (req: Request, res: Response) => {
   try {
     const { account, emailData, password } = req.body;
 
@@ -152,7 +153,7 @@ router.post('/send', AuthMiddleware.authenticate, upload.array('attachments'), a
  * POST /api/smtp/test-connection
  * Test SMTP connection without sending an email
  */
-router.post('/test-connection', AuthMiddleware.authenticate, async (req: Request, res: Response) => {
+router.post('/test-connection', authMiddleware.authenticate, async (req: Request, res: Response) => {
   try {
     const { account, password } = req.body;
 
@@ -205,7 +206,7 @@ router.post('/test-connection', AuthMiddleware.authenticate, async (req: Request
  * GET /api/smtp/providers
  * Get SMTP settings for common email providers
  */
-router.get('/providers/:email', AuthMiddleware.authenticate, async (req: Request, res: Response) => {
+router.get('/providers/:email', authMiddleware.authenticate, async (req: Request, res: Response) => {
   try {
     const { email } = req.params;
 
@@ -241,4 +242,8 @@ router.get('/providers/:email', AuthMiddleware.authenticate, async (req: Request
   }
 });
 
-export default router;
+  return router;
+};
+
+// Temporary backward compatibility
+export default createSmtpRouter;

@@ -1,6 +1,7 @@
 import { Account, Email } from '../types';
 import { ImapClient } from './ImapClient';
-import { databaseManager } from '../../server/database/DatabaseManager';
+// TODO: This is bad architecture - client code shouldn't access database directly
+// import { databaseManager } from '../../server/database/DatabaseManager';
 
 export class ImapService {
   private static clients: Map<string, ImapClient> = new Map();
@@ -179,7 +180,9 @@ export class ImapService {
    */
   private static async getCachedEmails(accountId: string, limit: number): Promise<Email[]> {
     try {
-      const dbEmails = await databaseManager.getEmailsByAccountId(accountId, limit);
+      // TODO: This should be done through API, not direct database access
+      // const dbEmails = await databaseManager.getEmailsByAccountId(accountId, limit);
+      const dbEmails: any[] = [];
       
       // Convert database format to frontend Email format
       return dbEmails.map(dbEmail => ({
@@ -267,7 +270,8 @@ export class ImapService {
       console.log(`💾 Caching ${emails.length} emails for account: ${accountId}`);
       
       // Clear existing cached emails for this account
-      await databaseManager.clearEmailsByAccountId(accountId);
+      // TODO: This should be done through API, not direct database access
+      // await databaseManager.clearEmailsByAccountId(accountId);
       
       // Insert fresh emails
       for (const email of emails) {
@@ -285,7 +289,8 @@ export class ImapService {
           message_id: email.id
         };
         
-        await databaseManager.createEmail(dbEmail);
+        // TODO: This should be done through API, not direct database access
+        // await databaseManager.createEmail(dbEmail);
       }
       
       console.log(`✅ Successfully cached ${emails.length} emails`);

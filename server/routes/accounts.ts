@@ -10,11 +10,11 @@ import crypto from 'crypto';
 import { DatabaseManager } from '../database/DatabaseManager';
 import { AuthMiddleware } from '../auth/AuthMiddleware';
 
-const router = express.Router();
-const dbManager = DatabaseManager.getInstance();
-
-// Apply authentication to all routes
-router.use(AuthMiddleware.authenticate);
+export const createAccountsRouter = (dbManager: DatabaseManager, authMiddleware: AuthMiddleware) => {
+  const router = express.Router();
+  
+  // Apply authentication to all routes
+  router.use(authMiddleware.authenticate);
 
 /**
  * Get all email accounts for authenticated user
@@ -218,4 +218,8 @@ router.delete('/:id', async (req: Request, res: Response) => {
   }
 });
 
-export default router;
+  return router;
+};
+
+// Temporary backward compatibility
+export default createAccountsRouter;

@@ -62,6 +62,7 @@ export class EmailService {
   private imapContainer: ImapContainer;
   private accountId: string;
   private credentials: EmailServiceCredentials;
+  private emailCacheService: EmailCacheService;
   
   // IDLE connection management
   private idleManager: IdleConnectionManager | null = null;
@@ -77,9 +78,10 @@ export class EmailService {
   private static readonly CACHE_STALE_DURATION_MS = 60 * 1000; // 1 minute 
   private static readonly BACKGROUND_REFRESH_THRESHOLD_MS = 30 * 1000; // 30 seconds (trigger background refresh quickly)
 
-  constructor(accountId: string, credentials: EmailServiceCredentials) {
+  constructor(accountId: string, credentials: EmailServiceCredentials, emailCacheService: EmailCacheService) {
     this.accountId = accountId;
     this.credentials = credentials;
+    this.emailCacheService = emailCacheService;
     this.imapContainer = new ImapContainer(credentials);
   }
 
@@ -169,7 +171,7 @@ export class EmailService {
       
       // Fallback to cache-only mode
       try {
-        const fallbackEmails = await EmailCacheService.getCachedEmails(this.accountId, limit);
+        const fallbackEmails = await this.emailCacheService.getCachedEmails(this.accountId, limit);
         return {
           emails: fallbackEmails,
           source: 'cache',
@@ -194,7 +196,7 @@ export class EmailService {
     
     try {
       // Step 1: Try cache first (fast)
-      const cachedContent = await EmailCacheService.getCachedEmailContent(emailId);
+      const cachedContent = await this.emailCacheService.getCachedEmailContent(emailId);
       if (cachedContent && (cachedContent.textContent || cachedContent.htmlContent)) {
         console.log(`⚡ Email content found in cache: ${emailId}`);
         console.log(`📄 Cache content analysis:`, {
@@ -217,7 +219,7 @@ export class EmailService {
       // Step 2: Not in cache or insufficient content - fetch from IMAP
       console.log(`🔄 Email content not in cache, fetching from IMAP: ${emailId}`);
       
-      const cachedEmail = await EmailCacheService.getCachedEmailByUID(this.accountId, this.extractUidFromEmailId(emailId));
+      const cachedEmail = await this.emailCacheService.getCachedEmailByUID(this.accountId, this.extractUidFromEmailId(emailId));
       if (!cachedEmail) {
         throw new Error(`Email not found: ${emailId}`);
       }
@@ -252,11 +254,11 @@ export class EmailService {
       // Update hasAttachments flag if we found attachments during parsing
       if (attachments.length > 0 && !cachedEmail.hasAttachments) {
         console.log(`📎 Updating hasAttachments flag for email: ${emailId}`);
-        await EmailCacheService.updateEmailAttachmentFlag(emailId, true);
+        await this.emailCacheService.updateEmailAttachmentFlag(emailId, true);
         processedContent.hasAttachments = true;
       }
       
-      await EmailCacheService.storeEmailContent(emailId, processedContent);
+      await this.emailCacheService.storeEmailContent(emailId, processedContent);
       
       console.log(`✅ Email content fetched and cached: ${emailId}`);
       return {
@@ -282,14 +284,14 @@ export class EmailService {
     console.log(`📖 EmailService.markAsRead - Email: ${emailId}`);
     
     try {
-      const cachedEmail = await EmailCacheService.getCachedEmailByUID(this.accountId, this.extractUidFromEmailId(emailId));
+      const cachedEmail = await this.emailCacheService.getCachedEmailByUID(this.accountId, this.extractUidFromEmailId(emailId));
       if (!cachedEmail) {
         throw new Error(`Email not found: ${emailId}`);
       }
 
       // Update both IMAP and cache simultaneously
       const imapPromise = this.updateReadStatusInImap(cachedEmail.uid, true);
-      const cachePromise = EmailCacheService.updateReadStatus(emailId, true);
+      const cachePromise = this.emailCacheService.updateReadStatus(emailId, true);
       
       await Promise.all([imapPromise, cachePromise]);
       console.log(`✅ Email marked as read: ${emailId}`);
@@ -306,7 +308,7 @@ export class EmailService {
     console.log(`🗑️ EmailService.deleteEmail - Email: ${emailId}`);
     
     try {
-      const cachedEmail = await EmailCacheService.getCachedEmailByUID(this.accountId, this.extractUidFromEmailId(emailId));
+      const cachedEmail = await this.emailCacheService.getCachedEmailByUID(this.accountId, this.extractUidFromEmailId(emailId));
       if (!cachedEmail) {
         throw new Error(`Email not found: ${emailId}`);
       }
@@ -316,7 +318,7 @@ export class EmailService {
       await this.imapContainer.deleteEmail(cachedEmail.uid);
       await this.imapContainer.disconnect();
       
-      await EmailCacheService.removeEmail(emailId);
+      await this.emailCacheService.removeEmail(emailId);
       console.log(`✅ Email deleted: ${emailId}`);
     } catch (error) {
       console.error(`❌ Error deleting email ${emailId}:`, error);
@@ -334,7 +336,7 @@ export class EmailService {
     try {
       // Step 1: Fast cache search
       console.log(`📂 Searching cache for: "${query}"`);
-      const cacheResults = await EmailCacheService.searchCachedEmails(this.accountId, query);
+      const cacheResults = await this.emailCacheService.searchCachedEmails(this.accountId, query);
       
       // Step 2: Comprehensive IMAP search (if needed)
       let imapResults: CachedEmail[] = [];
@@ -387,7 +389,7 @@ export class EmailService {
     
     try {
       // First get the cached email content to retrieve attachment metadata
-      const cachedContent = await EmailCacheService.getCachedEmailContent(emailId);
+      const cachedContent = await this.emailCacheService.getCachedEmailContent(emailId);
       if (!cachedContent) {
         throw new Error(`Email not found: ${emailId}`);
       }
@@ -458,7 +460,7 @@ export class EmailService {
     isFresh: boolean;
     isStale: boolean;
   }> {
-    const emails = await EmailCacheService.getCachedEmails(this.accountId);
+    const emails = await this.emailCacheService.getCachedEmails(this.accountId);
     const lastSync = EmailService.lastSync.get(this.accountId);
     const now = Date.now();
     const ageMs = lastSync ? (now - lastSync.getTime()) : Infinity;
@@ -510,7 +512,7 @@ export class EmailService {
       
       // Store in cache
       console.log(`💾 Storing ${cachedEmails.length} emails in cache...`);
-      await EmailCacheService.storeEmails(this.accountId, cachedEmails);
+      await this.emailCacheService.storeEmails(this.accountId, cachedEmails);
       console.log(`✅ Cache storage complete`);
       
       // Update sync timestamp
@@ -849,7 +851,7 @@ export class EmailService {
       console.log(`🔄 IDLE: Performing incremental fetch for account ${this.accountId}`);
       
       // Get current cache to determine what we have
-      const cachedEmails = await EmailCacheService.getCachedEmails(this.accountId);
+      const cachedEmails = await this.emailCacheService.getCachedEmails(this.accountId);
       const highestCachedUID = cachedEmails.length > 0 ? 
         Math.max(...cachedEmails.map(e => e.uid)) : 0;
       
@@ -889,7 +891,7 @@ export class EmailService {
           const cachedEmails = rawEmails.map(raw => this.convertRawEmailToCachedEmail(raw));
           
           // Merge with existing cache (will not duplicate)
-          await EmailCacheService.storeEmails(this.accountId, cachedEmails);
+          await this.emailCacheService.storeEmails(this.accountId, cachedEmails);
           
           console.log(`✅ IDLE: Added ${cachedEmails.length} new emails to cache`);
         } else {
@@ -991,7 +993,7 @@ export class EmailService {
   /**
    * Create EmailService instance from account data
    */
-  static createFromAccount(account: any): EmailService {
+  static createFromAccount(account: any, emailCacheService: EmailCacheService): EmailService {
     const credentials: EmailServiceCredentials = {
       host: account.imap.host,
       port: account.imap.port,
@@ -1000,6 +1002,6 @@ export class EmailService {
       password: account.password
     };
 
-    return new EmailService(account.id, credentials);
+    return new EmailService(account.id, credentials, emailCacheService);
   }
 }

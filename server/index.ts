@@ -10,37 +10,50 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { ImapService } from '../src/imap';
-import { configManager } from './config/ConfigManager';
-import { databaseManager } from './database/DatabaseManager';
+import { ConfigManager } from './config/ConfigManager';
+import { DatabaseManager } from './database/DatabaseManager';
+import { TokenManager } from './auth/TokenManager';
+import { AuthMiddleware } from './auth/AuthMiddleware';
 
 // Import route modules
-import setupRoutes from './routes/setup';
-import authRoutes from './routes/auth';
-import imapRoutes from './routes/imap';
-import smtpRoutes from './routes/smtp';
-import healthRoutes from './routes/health';
-import accountsRoutes from './routes/accounts';
-import emailsRoutes from './routes/emails';
-import settingsRoutes from './routes/settings';
-import exportRoutes from './routes/export';
-import cacheRoutes from './routes/cache';
-import idleRoutes from './routes/idle';
+import { createSetupRouter } from './routes/setup';
+import { createAuthRouter } from './routes/auth';
+import { createImapRouter } from './routes/imap';
+import { createSmtpRouter } from './routes/smtp';
+import { createHealthRouter } from './routes/health';
+import { createAccountsRouter } from './routes/accounts';
+import { createEmailsRouter } from './routes/emails';
+import { createSettingsRouter } from './routes/settings';
+import { createExportRouter } from './routes/export';
+import { createCacheRouter } from './routes/cache';
+import { createIdleRouter } from './routes/idle';
+import { EmailCacheService } from './cache/EmailCacheService';
 // emailsV2Routes removed - now using smart routes as main emails routes
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
+// Create instances
+let configManager: ConfigManager;
+let databaseManager: DatabaseManager;
+let emailCacheService: EmailCacheService;
+
 // Initialize configuration and database
 async function initializeApp() {
   try {
     console.log('🚀 Initializing Mailflow server...');
     
-    // Initialize configuration manager
+    // Create and initialize configuration manager
+    configManager = new ConfigManager();
     await configManager.initialize();
     
-    // Initialize database
+    // Create and initialize database
+    databaseManager = new DatabaseManager(configManager);
     await databaseManager.initialize();
+    
+    // Create email cache service
+    emailCacheService = new EmailCacheService(databaseManager);
     
     console.log('✅ Mailflow server initialization complete');
   } catch (error) {
@@ -77,19 +90,26 @@ app.use((req, res, next) => {
   next();
 });
 
-// API Routes
-app.use('/api/setup', setupRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/imap', imapRoutes);
-app.use('/api/smtp', smtpRoutes);
-app.use('/api/cache', cacheRoutes);
-app.use('/api/health', healthRoutes);
-app.use('/api/accounts', accountsRoutes);
-app.use('/api/emails', emailsRoutes); // Smart email API with EmailService
-app.use('/api/settings', settingsRoutes);
-app.use('/api/export', exportRoutes);
-app.use('/api/idle', idleRoutes); // IMAP IDLE real-time connections
-app.use('/api', exportRoutes); // Also mount at /api for backward compatibility with /api/import
+// Setup API routes function - must be called after initialization
+function setupApiRoutes() {
+  // Create shared instances
+  const tokenManager = new TokenManager(configManager);
+  const authMiddleware = new AuthMiddleware(tokenManager, databaseManager);
+  
+  // API Routes
+  app.use('/api/setup', createSetupRouter(configManager, databaseManager, authMiddleware));
+  app.use('/api/auth', createAuthRouter(databaseManager, tokenManager, authMiddleware));
+  app.use('/api/imap', createImapRouter(authMiddleware, emailCacheService));
+  app.use('/api/smtp', createSmtpRouter(authMiddleware));
+  app.use('/api/cache', createCacheRouter(emailCacheService, authMiddleware));
+  app.use('/api/health', createHealthRouter());
+  app.use('/api/accounts', createAccountsRouter(databaseManager, authMiddleware));
+  app.use('/api/emails', createEmailsRouter(databaseManager, emailCacheService, authMiddleware)); // Smart email API with EmailService
+  app.use('/api/settings', createSettingsRouter(databaseManager, authMiddleware));
+  app.use('/api/export', createExportRouter(databaseManager, authMiddleware));
+  app.use('/api/idle', createIdleRouter(databaseManager, emailCacheService)); // IMAP IDLE real-time connections
+  app.use('/api', createExportRouter(databaseManager, authMiddleware)); // Also mount at /api for backward compatibility with /api/import
+}
 
 // Serve static files in production
 if (!isDevelopment) {
@@ -114,6 +134,9 @@ app.use((error: Error, _req: express.Request, res: express.Response, _next: expr
 // Start server after initialization
 async function startServer() {
   await initializeApp();
+  
+  // Setup routes after instances are created
+  setupApiRoutes();
   
   app.listen(PORT, () => {
     console.log(`🚀 Mailflow server running on port ${PORT}`);
@@ -144,7 +167,9 @@ async function gracefulShutdown(signal: string) {
   console.log(`Received ${signal}, shutting down gracefully...`);
   try {
     ImapService.disconnectAll();
-    await databaseManager.close();
+    if (databaseManager) {
+      await databaseManager.close();
+    }
     console.log('✅ Graceful shutdown complete');
     process.exit(0);
   } catch (error) {

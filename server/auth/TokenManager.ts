@@ -7,7 +7,7 @@
 
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import { configManager } from '../config/ConfigManager';
+import { ConfigManager } from '../config/ConfigManager';
 
 export interface TokenPayload {
   userId: string;
@@ -26,14 +26,16 @@ export interface RefreshTokenPayload {
 }
 
 export class TokenManager {
-  private static readonly ACCESS_TOKEN_EXPIRY = '1h';
-  private static readonly REFRESH_TOKEN_EXPIRY = '7d';
+  private readonly ACCESS_TOKEN_EXPIRY = '1h';
+  private readonly REFRESH_TOKEN_EXPIRY = '7d';
+
+  constructor(private configManager: ConfigManager) {}
 
   /**
    * Get JWT secret from configuration
    */
-  private static getJwtSecret(): string {
-    const secret = configManager.getDeep('security.jwtSecret');
+  private getJwtSecret(): string {
+    const secret = this.configManager.getDeep('security.jwtSecret');
     if (!secret) {
       throw new Error('JWT secret not configured');
     }
@@ -43,7 +45,7 @@ export class TokenManager {
   /**
    * Generate access token (short-lived)
    */
-  static generateAccessToken(payload: Omit<TokenPayload, 'iat' | 'exp'>): string {
+  generateAccessToken(payload: Omit<TokenPayload, 'iat' | 'exp'>): string {
     try {
       const token = jwt.sign(
         payload,
@@ -64,7 +66,7 @@ export class TokenManager {
   /**
    * Generate refresh token (long-lived)
    */
-  static generateRefreshToken(payload: Omit<RefreshTokenPayload, 'iat' | 'exp'>): string {
+  generateRefreshToken(payload: Omit<RefreshTokenPayload, 'iat' | 'exp'>): string {
     try {
       const token = jwt.sign(
         payload,
@@ -85,7 +87,7 @@ export class TokenManager {
   /**
    * Verify and decode access token
    */
-  static verifyAccessToken(token: string): TokenPayload {
+  verifyAccessToken(token: string): TokenPayload {
     try {
       const decoded = jwt.verify(
         token,
@@ -112,7 +114,7 @@ export class TokenManager {
   /**
    * Verify and decode refresh token
    */
-  static verifyRefreshToken(token: string): RefreshTokenPayload {
+  verifyRefreshToken(token: string): RefreshTokenPayload {
     try {
       const decoded = jwt.verify(
         token,
@@ -139,7 +141,7 @@ export class TokenManager {
   /**
    * Extract token from Authorization header
    */
-  static extractTokenFromHeader(authHeader: string | undefined): string | null {
+  extractTokenFromHeader(authHeader: string | undefined): string | null {
     if (!authHeader) {
       return null;
     }
@@ -155,7 +157,7 @@ export class TokenManager {
   /**
    * Generate token pair (access + refresh)
    */
-  static generateTokenPair(userId: string, email: string, role: 'admin' | 'user'): {
+  generateTokenPair(userId: string, email: string, role: 'admin' | 'user'): {
     accessToken: string;
     refreshToken: string;
     expiresIn: number;
@@ -175,7 +177,7 @@ export class TokenManager {
     });
 
     // Get session timeout from config
-    const expiresIn = configManager.getDeep('security.sessionTimeout') || 3600;
+    const expiresIn = this.configManager.getDeep('security.sessionTimeout') || 3600;
 
     return {
       accessToken,
@@ -187,7 +189,7 @@ export class TokenManager {
   /**
    * Decode token without verification (for debugging)
    */
-  static decodeToken(token: string): any {
+  decodeToken(token: string): any {
     try {
       return jwt.decode(token);
     } catch (error) {
@@ -199,7 +201,7 @@ export class TokenManager {
   /**
    * Check if token is expired without verification
    */
-  static isTokenExpired(token: string): boolean {
+  isTokenExpired(token: string): boolean {
     try {
       const decoded = jwt.decode(token) as any;
       if (!decoded || !decoded.exp) {
@@ -216,7 +218,7 @@ export class TokenManager {
   /**
    * Get token expiration time
    */
-  static getTokenExpiration(token: string): Date | null {
+  getTokenExpiration(token: string): Date | null {
     try {
       const decoded = jwt.decode(token) as any;
       if (!decoded || !decoded.exp) {

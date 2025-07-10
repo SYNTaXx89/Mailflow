@@ -8,21 +8,24 @@
 import express from 'express';
 import { EmailService } from '../services/EmailService';
 import { getAccountWithCredentials } from '../utils/accountHelpers';
+import { DatabaseManager } from '../database/DatabaseManager';
+import { EmailCacheService } from '../cache/EmailCacheService';
 
-const router = express.Router();
+export function createIdleRouter(databaseManager: DatabaseManager, emailCacheService: EmailCacheService): express.Router {
+  const router = express.Router();
 
 /**
  * POST /api/idle/:accountId/start
  * Start IDLE connection for an account
  */
-router.post('/:accountId/start', async (req, res) => {
+  router.post('/:accountId/start', async (req, res) => {
   try {
     const { accountId } = req.params;
     
     console.log(`🔄 POST /api/idle/${accountId}/start`);
     
     // Get account details
-    const account = await getAccountWithCredentials(accountId);
+    const account = await getAccountWithCredentials(accountId, databaseManager);
     if (!account) {
       return res.status(404).json({
         success: false,
@@ -31,7 +34,7 @@ router.post('/:accountId/start', async (req, res) => {
     }
     
     // Create EmailService instance
-    const emailService = EmailService.createFromAccount(account);
+    const emailService = EmailService.createFromAccount(account, emailCacheService);
     
     // Start IDLE connection with event callback
     await emailService.startIdleConnection((event: string, data: any) => {
@@ -61,14 +64,14 @@ router.post('/:accountId/start', async (req, res) => {
  * POST /api/idle/:accountId/stop
  * Stop IDLE connection for an account
  */
-router.post('/:accountId/stop', async (req, res) => {
+  router.post('/:accountId/stop', async (req, res) => {
   try {
     const { accountId } = req.params;
     
     console.log(`🛑 POST /api/idle/${accountId}/stop`);
     
     // Get account details
-    const account = await getAccountWithCredentials(accountId);
+    const account = await getAccountWithCredentials(accountId, databaseManager);
     if (!account) {
       return res.status(404).json({
         success: false,
@@ -77,7 +80,7 @@ router.post('/:accountId/stop', async (req, res) => {
     }
     
     // Create EmailService instance and stop IDLE
-    const emailService = EmailService.createFromAccount(account);
+    const emailService = EmailService.createFromAccount(account, emailCacheService);
     await emailService.stopIdleConnection();
     
     console.log(`✅ IDLE connection stopped for account: ${accountId}`);
@@ -101,14 +104,14 @@ router.post('/:accountId/stop', async (req, res) => {
  * GET /api/idle/:accountId/status
  * Get IDLE connection status for an account
  */
-router.get('/:accountId/status', async (req, res) => {
+  router.get('/:accountId/status', async (req, res) => {
   try {
     const { accountId } = req.params;
     
     console.log(`📊 GET /api/idle/${accountId}/status`);
     
     // Get account details
-    const account = await getAccountWithCredentials(accountId);
+    const account = await getAccountWithCredentials(accountId, databaseManager);
     if (!account) {
       return res.status(404).json({
         success: false,
@@ -117,7 +120,7 @@ router.get('/:accountId/status', async (req, res) => {
     }
     
     // Create EmailService instance and get status
-    const emailService = EmailService.createFromAccount(account);
+    const emailService = EmailService.createFromAccount(account, emailCacheService);
     const status = emailService.getIdleStatus();
     
     res.json({
@@ -145,14 +148,14 @@ router.get('/:accountId/status', async (req, res) => {
  * POST /api/idle/:accountId/refresh
  * Manual refresh during IDLE connection
  */
-router.post('/:accountId/refresh', async (req, res) => {
+  router.post('/:accountId/refresh', async (req, res) => {
   try {
     const { accountId } = req.params;
     
     console.log(`🔄 POST /api/idle/${accountId}/refresh`);
     
     // Get account details
-    const account = await getAccountWithCredentials(accountId);
+    const account = await getAccountWithCredentials(accountId, databaseManager);
     if (!account) {
       return res.status(404).json({
         success: false,
@@ -161,7 +164,7 @@ router.post('/:accountId/refresh', async (req, res) => {
     }
     
     // Create EmailService instance and perform refresh
-    const emailService = EmailService.createFromAccount(account);
+    const emailService = EmailService.createFromAccount(account, emailCacheService);
     await emailService.refreshDuringIdle();
     
     console.log(`✅ Manual refresh completed for account: ${accountId}`);
@@ -185,7 +188,7 @@ router.post('/:accountId/refresh', async (req, res) => {
  * GET /api/idle/status
  * Get IDLE connection status for all accounts
  */
-router.get('/status', async (req, res) => {
+  router.get('/status', async (req, res) => {
   try {
     console.log('📊 GET /api/idle/status');
     
@@ -214,7 +217,7 @@ router.get('/status', async (req, res) => {
  * POST /api/idle/stop-all
  * Stop all IDLE connections
  */
-router.post('/stop-all', async (req, res) => {
+  router.post('/stop-all', async (req, res) => {
   try {
     console.log('🛑 POST /api/idle/stop-all');
     
@@ -232,6 +235,7 @@ router.post('/stop-all', async (req, res) => {
       error: error instanceof Error ? error.message : 'Failed to stop all IDLE connections'
     });
   }
-});
+  });
 
-export default router;
+  return router;
+}

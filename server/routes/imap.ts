@@ -2,11 +2,13 @@ import express from 'express';
 import { ImapService, ImapContainer } from '../../src/imap';
 import { MimeParser } from '../../src/imap/MimeParser';
 import { AuthMiddleware } from '../auth/AuthMiddleware';
+import { EmailCacheService } from '../cache/EmailCacheService';
 
-const router = express.Router();
-
-// Apply authentication middleware to all IMAP routes
-router.use(AuthMiddleware.authenticate);
+export const createImapRouter = (authMiddleware: AuthMiddleware, emailCacheService: EmailCacheService) => {
+  const router = express.Router();
+  
+  // Apply authentication middleware to all IMAP routes
+  router.use(authMiddleware.authenticate);
 
 router.post('/test-connection', async (req, res) => {
   try {
@@ -169,7 +171,6 @@ router.post('/test-integration', async (req, res) => {
     
     // Step 2: Convert to cache format and store
     console.log('💾 Step 2: Converting and storing in cache...');
-    const { EmailCacheService } = await import('../cache/EmailCacheService');
     
     const cachedEmails = rawEmails.map(raw => {
       const parsedHeader = MimeParser.parseEmailHeader(raw.headers);
@@ -191,15 +192,15 @@ router.post('/test-integration', async (req, res) => {
       };
     });
     
-    await EmailCacheService.storeEmails(account.id, cachedEmails);
+    await emailCacheService.storeEmails(account.id, cachedEmails);
     
     // Step 3: Retrieve from cache to verify
     console.log('📂 Step 3: Retrieving from cache to verify...');
-    const retrievedEmails = await EmailCacheService.getCachedEmails(account.id, limit);
+    const retrievedEmails = await emailCacheService.getCachedEmails(account.id, limit);
     
     // Step 4: Get cache stats
     console.log('📊 Step 4: Getting cache statistics...');
-    const cacheStats = await EmailCacheService.getCacheStats(account.id);
+    const cacheStats = await emailCacheService.getCacheStats(account.id);
     
     res.json({
       success: true,
@@ -241,4 +242,8 @@ function parseEmailAddress(emailString: string): { name: string; email: string }
   };
 }
 
-export default router;
+  return router;
+};
+
+// Temporary backward compatibility
+export default createImapRouter;

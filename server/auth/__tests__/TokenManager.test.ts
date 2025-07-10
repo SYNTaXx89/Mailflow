@@ -2,15 +2,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
 import { TokenManager, TokenPayload, RefreshTokenPayload } from '../TokenManager'
+import { ConfigManager } from '../../config/ConfigManager'
 
 // Mock dependencies
 vi.mock('jsonwebtoken')
 vi.mock('crypto')
-vi.mock('../../config/ConfigManager', () => ({
-  configManager: {
-    getDeep: vi.fn(),
-  },
-}))
+vi.mock('../../config/ConfigManager')
 
 describe('TokenManager', () => {
   const mockSecret = 'test-jwt-secret-key'
@@ -18,15 +15,22 @@ describe('TokenManager', () => {
   const mockEmail = 'test@example.com'
   const mockRole = 'user' as const
   const mockTokenId = 'token-uuid-123'
+  
+  let mockConfigManager: ConfigManager
+  let tokenManager: TokenManager
 
-  beforeEach(async () => {
-    // Setup default mocks
-    const { configManager } = await import('../../config/ConfigManager')
-    vi.mocked(configManager.getDeep).mockImplementation((path: string) => {
-      if (path === 'security.jwtSecret') return mockSecret
-      if (path === 'security.sessionTimeout') return 3600
-      return null
-    })
+  beforeEach(() => {
+    // Create mock ConfigManager instance
+    mockConfigManager = {
+      getDeep: vi.fn().mockImplementation((path: string) => {
+        if (path === 'security.jwtSecret') return mockSecret
+        if (path === 'security.sessionTimeout') return 3600
+        return null
+      })
+    } as unknown as ConfigManager
+    
+    // Create TokenManager instance with mock dependency
+    tokenManager = new TokenManager(mockConfigManager)
 
     vi.mocked(crypto.randomUUID).mockReturnValue(mockTokenId)
     vi.mocked(jwt.sign).mockReturnValue('mock.jwt.token')
@@ -60,7 +64,7 @@ describe('TokenManager', () => {
       }
 
       // Act
-      const result = TokenManager.generateAccessToken(payload)
+      const result = tokenManager.generateAccessToken(payload)
 
       // Assert
       expect(jwt.sign).toHaveBeenCalledWith(
@@ -75,10 +79,9 @@ describe('TokenManager', () => {
       expect(result).toBe('mock.jwt.token')
     })
 
-    it('should throw error when JWT secret is not configured', async () => {
+    it('should throw error when JWT secret is not configured', () => {
       // Arrange
-      const { configManager } = await import('../../config/ConfigManager')
-      vi.mocked(configManager.getDeep).mockReturnValue(null)
+      vi.mocked(mockConfigManager.getDeep).mockReturnValue(null)
 
       const payload = {
         userId: mockUserId,
@@ -87,7 +90,7 @@ describe('TokenManager', () => {
       }
 
       // Act & Assert
-      expect(() => TokenManager.generateAccessToken(payload)).toThrow('Token generation failed')
+      expect(() => tokenManager.generateAccessToken(payload)).toThrow('Token generation failed')
     })
 
     it('should handle JWT signing errors', () => {
@@ -103,7 +106,7 @@ describe('TokenManager', () => {
       }
 
       // Act & Assert
-      expect(() => TokenManager.generateAccessToken(payload)).toThrow('Token generation failed')
+      expect(() => tokenManager.generateAccessToken(payload)).toThrow('Token generation failed')
     })
   })
 
@@ -117,7 +120,7 @@ describe('TokenManager', () => {
       }
 
       // Act
-      const result = TokenManager.generateRefreshToken(payload)
+      const result = tokenManager.generateRefreshToken(payload)
 
       // Assert
       expect(jwt.sign).toHaveBeenCalledWith(
@@ -132,10 +135,9 @@ describe('TokenManager', () => {
       expect(result).toBe('mock.jwt.token')
     })
 
-    it('should throw error when JWT secret is not configured', async () => {
+    it('should throw error when JWT secret is not configured', () => {
       // Arrange
-      const { configManager } = await import('../../config/ConfigManager')
-      vi.mocked(configManager.getDeep).mockReturnValue(null)
+      vi.mocked(mockConfigManager.getDeep).mockReturnValue(null)
 
       const payload = {
         userId: mockUserId,
@@ -144,7 +146,7 @@ describe('TokenManager', () => {
       }
 
       // Act & Assert
-      expect(() => TokenManager.generateRefreshToken(payload)).toThrow('Refresh token generation failed')
+      expect(() => tokenManager.generateRefreshToken(payload)).toThrow('Refresh token generation failed')
     })
 
     it('should handle JWT signing errors', () => {
@@ -160,7 +162,7 @@ describe('TokenManager', () => {
       }
 
       // Act & Assert
-      expect(() => TokenManager.generateRefreshToken(payload)).toThrow('Refresh token generation failed')
+      expect(() => tokenManager.generateRefreshToken(payload)).toThrow('Refresh token generation failed')
     })
   })
 
@@ -177,7 +179,7 @@ describe('TokenManager', () => {
       vi.mocked(jwt.verify).mockReturnValue(expectedPayload)
 
       // Act
-      const result = TokenManager.verifyAccessToken(token)
+      const result = tokenManager.verifyAccessToken(token)
 
       // Assert
       expect(jwt.verify).toHaveBeenCalledWith(
@@ -199,7 +201,7 @@ describe('TokenManager', () => {
       })
 
       // Act & Assert
-      expect(() => TokenManager.verifyAccessToken(token)).toThrow('Token expired')
+      expect(() => tokenManager.verifyAccessToken(token)).toThrow('Token expired')
     })
 
     it('should handle invalid token error', () => {
@@ -210,7 +212,7 @@ describe('TokenManager', () => {
       })
 
       // Act & Assert
-      expect(() => TokenManager.verifyAccessToken(token)).toThrow('Invalid token')
+      expect(() => tokenManager.verifyAccessToken(token)).toThrow('Invalid token')
     })
 
     it('should handle generic verification errors', () => {
@@ -221,18 +223,17 @@ describe('TokenManager', () => {
       })
 
       // Act & Assert
-      expect(() => TokenManager.verifyAccessToken(token)).toThrow('Token verification failed')
+      expect(() => tokenManager.verifyAccessToken(token)).toThrow('Token verification failed')
     })
 
-    it('should throw error when JWT secret is not configured', async () => {
+    it('should throw error when JWT secret is not configured', () => {
       // Arrange
-      const { configManager } = await import('../../config/ConfigManager')
-      vi.mocked(configManager.getDeep).mockReturnValue(null)
+      vi.mocked(mockConfigManager.getDeep).mockReturnValue(null)
 
       const token = 'valid.jwt.token'
 
       // Act & Assert
-      expect(() => TokenManager.verifyAccessToken(token)).toThrow('Token verification failed')
+      expect(() => tokenManager.verifyAccessToken(token)).toThrow('Token verification failed')
     })
   })
 
@@ -249,7 +250,7 @@ describe('TokenManager', () => {
       vi.mocked(jwt.verify).mockReturnValue(expectedPayload)
 
       // Act
-      const result = TokenManager.verifyRefreshToken(token)
+      const result = tokenManager.verifyRefreshToken(token)
 
       // Assert
       expect(jwt.verify).toHaveBeenCalledWith(
@@ -271,7 +272,7 @@ describe('TokenManager', () => {
       })
 
       // Act & Assert
-      expect(() => TokenManager.verifyRefreshToken(token)).toThrow('Refresh token expired')
+      expect(() => tokenManager.verifyRefreshToken(token)).toThrow('Refresh token expired')
     })
 
     it('should handle invalid refresh token error', () => {
@@ -282,7 +283,7 @@ describe('TokenManager', () => {
       })
 
       // Act & Assert
-      expect(() => TokenManager.verifyRefreshToken(token)).toThrow('Invalid refresh token')
+      expect(() => tokenManager.verifyRefreshToken(token)).toThrow('Invalid refresh token')
     })
 
     it('should handle generic refresh token verification errors', () => {
@@ -293,7 +294,7 @@ describe('TokenManager', () => {
       })
 
       // Act & Assert
-      expect(() => TokenManager.verifyRefreshToken(token)).toThrow('Refresh token verification failed')
+      expect(() => tokenManager.verifyRefreshToken(token)).toThrow('Refresh token verification failed')
     })
   })
 
@@ -304,7 +305,7 @@ describe('TokenManager', () => {
       const authHeader = `Bearer ${token}`
 
       // Act
-      const result = TokenManager.extractTokenFromHeader(authHeader)
+      const result = tokenManager.extractTokenFromHeader(authHeader)
 
       // Assert
       expect(result).toBe(token)
@@ -312,7 +313,7 @@ describe('TokenManager', () => {
 
     it('should return null for undefined header', () => {
       // Act
-      const result = TokenManager.extractTokenFromHeader(undefined)
+      const result = tokenManager.extractTokenFromHeader(undefined)
 
       // Assert
       expect(result).toBeNull()
@@ -323,7 +324,7 @@ describe('TokenManager', () => {
       const authHeader = 'valid.jwt.token'
 
       // Act
-      const result = TokenManager.extractTokenFromHeader(authHeader)
+      const result = tokenManager.extractTokenFromHeader(authHeader)
 
       // Assert
       expect(result).toBeNull()
@@ -334,7 +335,7 @@ describe('TokenManager', () => {
       const authHeader = 'Basic dXNlcjpwYXNz'
 
       // Act
-      const result = TokenManager.extractTokenFromHeader(authHeader)
+      const result = tokenManager.extractTokenFromHeader(authHeader)
 
       // Assert
       expect(result).toBeNull()
@@ -345,7 +346,7 @@ describe('TokenManager', () => {
       const authHeader = 'Bearer token extra'
 
       // Act
-      const result = TokenManager.extractTokenFromHeader(authHeader)
+      const result = tokenManager.extractTokenFromHeader(authHeader)
 
       // Assert
       expect(result).toBeNull()
@@ -356,7 +357,7 @@ describe('TokenManager', () => {
       const authHeader = ''
 
       // Act
-      const result = TokenManager.extractTokenFromHeader(authHeader)
+      const result = tokenManager.extractTokenFromHeader(authHeader)
 
       // Assert
       expect(result).toBeNull()
@@ -371,7 +372,7 @@ describe('TokenManager', () => {
         .mockReturnValueOnce('mock.refresh.token')
 
       // Act
-      const result = TokenManager.generateTokenPair(mockUserId, mockEmail, mockRole)
+      const result = tokenManager.generateTokenPair(mockUserId, mockEmail, mockRole)
 
       // Assert
       expect(result).toEqual({
@@ -409,17 +410,16 @@ describe('TokenManager', () => {
       expect(crypto.randomUUID).toHaveBeenCalled()
     })
 
-    it('should use default session timeout when not configured', async () => {
+    it('should use default session timeout when not configured', () => {
       // Arrange
-      const { configManager } = await import('../../config/ConfigManager')
-      vi.mocked(configManager.getDeep).mockImplementation((path: string) => {
+      vi.mocked(mockConfigManager.getDeep).mockImplementation((path: string) => {
         if (path === 'security.jwtSecret') return mockSecret
         if (path === 'security.sessionTimeout') return null
         return null
       })
 
       // Act
-      const result = TokenManager.generateTokenPair(mockUserId, mockEmail, mockRole)
+      const result = tokenManager.generateTokenPair(mockUserId, mockEmail, mockRole)
 
       // Assert
       expect(result.expiresIn).toBe(3600) // Default value
@@ -439,7 +439,7 @@ describe('TokenManager', () => {
       vi.mocked(jwt.decode).mockReturnValue(expectedPayload)
 
       // Act
-      const result = TokenManager.decodeToken(token)
+      const result = tokenManager.decodeToken(token)
 
       // Assert
       expect(jwt.decode).toHaveBeenCalledWith(token)
@@ -454,7 +454,7 @@ describe('TokenManager', () => {
       })
 
       // Act
-      const result = TokenManager.decodeToken(token)
+      const result = tokenManager.decodeToken(token)
 
       // Assert
       expect(result).toBeNull()
@@ -474,7 +474,7 @@ describe('TokenManager', () => {
       })
 
       // Act
-      const result = TokenManager.isTokenExpired(token)
+      const result = tokenManager.isTokenExpired(token)
 
       // Assert
       expect(result).toBe(false)
@@ -492,7 +492,7 @@ describe('TokenManager', () => {
       })
 
       // Act
-      const result = TokenManager.isTokenExpired(token)
+      const result = tokenManager.isTokenExpired(token)
 
       // Assert
       expect(result).toBe(true)
@@ -509,7 +509,7 @@ describe('TokenManager', () => {
       })
 
       // Act
-      const result = TokenManager.isTokenExpired(token)
+      const result = tokenManager.isTokenExpired(token)
 
       // Assert
       expect(result).toBe(true)
@@ -521,7 +521,7 @@ describe('TokenManager', () => {
       vi.mocked(jwt.decode).mockReturnValue(null)
 
       // Act
-      const result = TokenManager.isTokenExpired(token)
+      const result = tokenManager.isTokenExpired(token)
 
       // Assert
       expect(result).toBe(true)
@@ -535,7 +535,7 @@ describe('TokenManager', () => {
       })
 
       // Act
-      const result = TokenManager.isTokenExpired(token)
+      const result = tokenManager.isTokenExpired(token)
 
       // Assert
       expect(result).toBe(true)
@@ -556,7 +556,7 @@ describe('TokenManager', () => {
       })
 
       // Act
-      const result = TokenManager.getTokenExpiration(token)
+      const result = tokenManager.getTokenExpiration(token)
 
       // Assert
       expect(result).toEqual(expectedDate)
@@ -573,7 +573,7 @@ describe('TokenManager', () => {
       })
 
       // Act
-      const result = TokenManager.getTokenExpiration(token)
+      const result = tokenManager.getTokenExpiration(token)
 
       // Assert
       expect(result).toBeNull()
@@ -585,7 +585,7 @@ describe('TokenManager', () => {
       vi.mocked(jwt.decode).mockReturnValue(null)
 
       // Act
-      const result = TokenManager.getTokenExpiration(token)
+      const result = tokenManager.getTokenExpiration(token)
 
       // Assert
       expect(result).toBeNull()
@@ -599,7 +599,7 @@ describe('TokenManager', () => {
       })
 
       // Act
-      const result = TokenManager.getTokenExpiration(token)
+      const result = tokenManager.getTokenExpiration(token)
 
       // Assert
       expect(result).toBeNull()

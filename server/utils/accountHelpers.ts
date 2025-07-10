@@ -4,12 +4,12 @@
  * Shared utilities for working with email accounts across different route files.
  */
 
-import { databaseManager } from '../database/DatabaseManager';
+import { DatabaseManager } from '../database/DatabaseManager';
 
 /**
  * Get account with decrypted credentials
  */
-export async function getAccountWithCredentials(accountId: string): Promise<any> {
+export async function getAccountWithCredentials(accountId: string, databaseManager: DatabaseManager): Promise<any> {
   try {
     // Get account from database
     const dbAccount = await databaseManager.getAccountById(accountId);
