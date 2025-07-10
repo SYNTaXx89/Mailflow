@@ -108,17 +108,17 @@ function setupApiRoutes() {
   app.use('/api/export', createExportRouter(databaseManager, authMiddleware));
   app.use('/api/idle', createIdleRouter(databaseManager, emailCacheService, authMiddleware)); // IMAP IDLE real-time connections
   app.use('/api', createExportRouter(databaseManager, authMiddleware)); // Also mount at /api for backward compatibility with /api/import
-}
-
-// Serve static files in production
-if (!isDevelopment) {
-  // Serve React app static files
-  app.use(express.static(path.join(__dirname, '../')));
   
-  // Catch all handler: send back React's index.html file for client-side routing
-  app.get('*', (_req, res) => {
-    res.sendFile(path.join(__dirname, '../index.html'));
-  });
+  // Serve static files in production (AFTER API routes)
+  if (!isDevelopment) {
+    // Serve React app static files
+    app.use(express.static(path.join(__dirname, '../')));
+    
+    // Catch all handler: send back React's index.html file for client-side routing
+    app.get('*', (_req, res) => {
+      res.sendFile(path.join(__dirname, '../index.html'));
+    });
+  }
 }
 
 // Error handling middleware
