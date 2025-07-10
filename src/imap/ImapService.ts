@@ -178,7 +178,7 @@ export class ImapService {
   /**
    * Get cached emails from database
    */
-  private static async getCachedEmails(accountId: string, limit: number): Promise<Email[]> {
+  private static async getCachedEmails(_accountId: string, _limit: number): Promise<Email[]> {
     try {
       // TODO: This should be done through API, not direct database access
       // const dbEmails = await databaseManager.getEmailsByAccountId(accountId, limit);
@@ -273,25 +273,25 @@ export class ImapService {
       // TODO: This should be done through API, not direct database access
       // await databaseManager.clearEmailsByAccountId(accountId);
       
-      // Insert fresh emails
-      for (const email of emails) {
-        const dbEmail = {
-          id: email.id,
-          account_id: accountId,
-          subject: email.subject,
-          sender: `${email.from.name} <${email.from.email}>`,
-          recipient: '', // TODO: Add recipient field if needed
-          preview: email.preview,
-          full_body: email.content || undefined,
-          date: email.date.toISOString(),
-          is_read: email.isRead,
-          uid: email.uid?.toString(),
-          message_id: email.id
-        };
-        
-        // TODO: This should be done through API, not direct database access
-        // await databaseManager.createEmail(dbEmail);
-      }
+      // TODO: Insert fresh emails - implement when API is available
+      // for (const email of emails) {
+      //   const dbEmail = {
+      //     id: email.id,
+      //     account_id: accountId,
+      //     subject: email.subject,
+      //     sender: `${email.from.name} <${email.from.email}>`,
+      //     recipient: '', // TODO: Add recipient field if needed
+      //     preview: email.preview,
+      //     full_body: email.content || undefined,
+      //     date: email.date.toISOString(),
+      //     is_read: email.isRead,
+      //     uid: email.uid?.toString(),
+      //     message_id: email.id
+      //   };
+      //   
+      //   // TODO: This should be done through API, not direct database access
+      //   // await databaseManager.createEmail(dbEmail);
+      // }
       
       console.log(`✅ Successfully cached ${emails.length} emails`);
     } catch (error) {

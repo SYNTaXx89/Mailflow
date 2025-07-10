@@ -212,7 +212,8 @@ export const useEmailOperations = (accounts: Account[], selectedAccountId: strin
     return {
       to,
       subject,
-      body: `\n\nOn ${email.date.toLocaleDateString()}, ${email.from.name} wrote:\n> ${(emailContent || 'No content').split('\n').join('\n> ')}`
+      body: `\n\nOn ${email.date.toLocaleDateString()}, ${email.from.name} wrote:\n> ${(emailContent || 'No content').split('\n').join('\n> ')}`,
+      attachments: []
     };
   };
 

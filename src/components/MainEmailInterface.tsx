@@ -440,7 +440,7 @@ const MainEmailInterface: React.FC<MainEmailInterfaceProps> = () => {
           subject: composerData.subject,
           body: composerData.body || ''
         }));
-        formData.append('password', selectedAccount.password);
+        formData.append('password', selectedAccount.password || '');
         
         // Add attachments
         for (const attachment of composerData.attachments) {

@@ -7,7 +7,8 @@ export const useEmailComposer = () => {
   const [composerData, setComposerData] = useState<ComposerData>({
     to: '',
     subject: '',
-    body: ''
+    body: '',
+    attachments: []
   });
 
   const applyFormatting = (command: string): void => {
@@ -15,7 +16,7 @@ export const useEmailComposer = () => {
   };
 
   const resetComposer = (): void => {
-    setComposerData({ to: '', subject: '', body: '' });
+    setComposerData({ to: '', subject: '', body: '', attachments: [] });
     setShowComposer(false);
   };
 
