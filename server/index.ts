@@ -9,7 +9,7 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
-import { ImapService } from '../src/imap';
+import { ImapService } from './imap';
 import { ConfigManager } from './config/ConfigManager';
 import { DatabaseManager } from './database/DatabaseManager';
 import { TokenManager } from './auth/TokenManager';

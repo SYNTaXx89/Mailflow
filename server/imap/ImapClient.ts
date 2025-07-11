@@ -1,5 +1,5 @@
 const Imap = require('imap');
-import { Account } from '../types';
+import { Account } from '../../src/types';
 import { ImapConfig, EmailPreview, EmailFull } from './types';
 import { EmailParser } from './EmailParser';
 

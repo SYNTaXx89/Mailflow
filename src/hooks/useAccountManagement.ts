@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Account, AccountFormData, AppState } from '../types/index';
 import { AccountApi, EmailApi } from '../utils/api';
-import { ImapApiService } from '../utils/imap-api';
+import { apiConfig } from '../config/api';
 
 export const useAccountManagement = (appState: AppState, setAppState: React.Dispatch<React.SetStateAction<AppState>>) => {
   const [showAccountModal, setShowAccountModal] = useState(false);
@@ -55,12 +55,26 @@ export const useAccountManagement = (appState: AppState, setAppState: React.Disp
         }
       };
       
-      const success = await ImapApiService.testAccount(testAccount, formData.password);
+      // Test connection via backend API
+      const token = localStorage.getItem('mailflow_access_token');
+      const response = await fetch(`${apiConfig.baseUrl}/imap/test-connection`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          account: testAccount,
+          password: formData.password
+        })
+      });
+
+      const result = await response.json();
       
-      if (success) {
-        alert('Connection test successful!');
+      if (result.success) {
+        alert('✅ Connection test successful! IMAP connection verified.');
       } else {
-        alert('Connection test failed. Please check your settings.');
+        alert('❌ Connection test failed: ' + (result.error || 'Unable to connect to email server'));
       }
     } catch (error) {
       console.error('Connection test error:', error);

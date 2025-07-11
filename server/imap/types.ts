@@ -1,4 +1,4 @@
-import { EmailFrom } from '../types';
+import { EmailFrom } from '../../src/types';
 
 export interface ImapConfig {
   host: string;
