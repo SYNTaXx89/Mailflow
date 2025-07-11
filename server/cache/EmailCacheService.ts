@@ -180,18 +180,34 @@ export class EmailCacheService {
   }
 
   /**
-   * Smart merge emails with existing cache (preserves existing emails)
+   * Smart merge emails with existing cache (preserves existing emails and read states)
    */
   async mergeEmails(accountId: string, newEmails: CachedEmail[]): Promise<void> {
     try {
       console.log(`🔄 Smart merging ${newEmails.length} emails for account: ${accountId}`);
       
-      // Get existing emails to check for duplicates
+      // Get existing emails to check for duplicates and preserve read states
       const existingEmails = await this.getCachedEmails(accountId);
-      const existingUIDs = new Set(existingEmails.map(email => email.uid));
+      const existingEmailMap = new Map<number, CachedEmail>();
+      existingEmails.forEach(email => {
+        existingEmailMap.set(email.uid, email);
+      });
       
-      // Filter out emails that already exist in cache (by UID)
-      const genuinelyNewEmails = newEmails.filter(email => !existingUIDs.has(email.uid));
+      const genuinelyNewEmails: CachedEmail[] = [];
+      const emailsToUpdate: CachedEmail[] = [];
+      
+      // Check each new email
+      for (const newEmail of newEmails) {
+        const existingEmail = existingEmailMap.get(newEmail.uid);
+        if (!existingEmail) {
+          // This is a new email
+          genuinelyNewEmails.push(newEmail);
+        } else if (existingEmail.isRead !== newEmail.isRead) {
+          // Email exists but read state differs - preserve the cached read state
+          console.log(`📖 Preserving cached read state for UID ${newEmail.uid}: ${existingEmail.isRead ? 'READ' : 'UNREAD'} (new state would be: ${newEmail.isRead ? 'READ' : 'UNREAD'})`);
+          // Note: We're preserving the cached state, so no update needed
+        }
+      }
       
       console.log(`📊 Merge analysis: ${newEmails.length} total, ${existingEmails.length} existing, ${genuinelyNewEmails.length} genuinely new`);
       

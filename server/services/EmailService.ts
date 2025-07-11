@@ -73,10 +73,10 @@ export class EmailService {
   private static lastSync: Map<string, Date> = new Map();
   private static idleManagers: Map<string, IdleConnectionManager> = new Map();
   
-  // Business rules - EMAIL CLIENT TIMING (fast refresh for real-time feel)
-  private static readonly CACHE_FRESH_DURATION_MS = 30 * 1000; // 30 seconds (email client needs real-time)
-  private static readonly CACHE_STALE_DURATION_MS = 60 * 1000; // 1 minute 
-  private static readonly BACKGROUND_REFRESH_THRESHOLD_MS = 30 * 1000; // 30 seconds (trigger background refresh quickly)
+  // Business rules - EMAIL CLIENT TIMING (balanced for read state persistence)
+  private static readonly CACHE_FRESH_DURATION_MS = 5 * 60 * 1000; // 5 minutes (reduced IMAP load while preserving read states)
+  private static readonly CACHE_STALE_DURATION_MS = 10 * 60 * 1000; // 10 minutes 
+  private static readonly BACKGROUND_REFRESH_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes (trigger background refresh)
 
   constructor(accountId: string, credentials: EmailServiceCredentials, emailCacheService: EmailCacheService) {
     this.accountId = accountId;
@@ -504,9 +504,29 @@ export class EmailService {
       await this.imapContainer.disconnect();
       console.log(`✅ IMAP disconnected successfully`);
       
+      // Get existing cached emails to preserve read states
+      console.log(`📖 Getting existing cached emails to preserve read states...`);
+      const existingCachedEmails = await this.emailCacheService.getCachedEmails(this.accountId);
+      const readStateMap = new Map<string, boolean>();
+      existingCachedEmails.forEach(email => {
+        readStateMap.set(email.uid.toString(), email.isRead);
+      });
+      console.log(`📖 Found ${readStateMap.size} existing emails with read states`);
+      
       // Convert to cache format
       console.log(`🔄 Converting ${rawEmails.length} raw emails to cache format...`);
-      const cachedEmails = rawEmails.map(raw => this.convertRawEmailToCachedEmail(raw));
+      const cachedEmails = rawEmails.map(raw => {
+        const convertedEmail = this.convertRawEmailToCachedEmail(raw);
+        
+        // Preserve read state from cache if it exists
+        const cachedReadState = readStateMap.get(raw.uid.toString());
+        if (cachedReadState !== undefined && cachedReadState !== convertedEmail.isRead) {
+          console.log(`📖 Preserving read state for UID ${raw.uid}: ${cachedReadState ? 'READ' : 'UNREAD'} (IMAP says: ${convertedEmail.isRead ? 'READ' : 'UNREAD'})`);
+          convertedEmail.isRead = cachedReadState;
+        }
+        
+        return convertedEmail;
+      });
       console.log(`✅ Converted to ${cachedEmails.length} cached emails`);
       console.log(`🔍 DEBUG: First cached email:`, cachedEmails[0]?.subject || 'NO SUBJECT');
       
@@ -640,13 +660,24 @@ export class EmailService {
    * Update read status in IMAP
    */
   private async updateReadStatusInImap(uid: number, isRead: boolean): Promise<void> {
-    await this.imapContainer.connect();
-    if (isRead) {
-      await this.imapContainer.markAsRead(uid);
-    } else {
-      await this.imapContainer.markAsUnread(uid);
+    try {
+      await this.imapContainer.connect();
+      if (isRead) {
+        await this.imapContainer.markAsRead(uid);
+      } else {
+        await this.imapContainer.markAsUnread(uid);
+      }
+      
+      // Keep connection alive briefly to ensure flag sync
+      console.log(`⏱️ Waiting for IMAP flag sync...`);
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+      
+      await this.imapContainer.disconnect();
+      console.log(`✅ IMAP read status updated and synced for UID ${uid}`);
+    } catch (error) {
+      console.error(`❌ Failed to update IMAP read status for UID ${uid}:`, error);
+      // Don't throw - cache update should still succeed even if IMAP fails
     }
-    await this.imapContainer.disconnect();
   }
 
   /**
