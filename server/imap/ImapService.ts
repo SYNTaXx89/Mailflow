@@ -1,4 +1,4 @@
-import { Account, Email } from '../types';
+import { Account, Email } from '../../src/types';
 import { ImapClient } from './ImapClient';
 // TODO: This is bad architecture - client code shouldn't access database directly
 // import { databaseManager } from '../../server/database/DatabaseManager';

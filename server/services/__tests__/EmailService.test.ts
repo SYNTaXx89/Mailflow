@@ -1,16 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { EmailService, EmailServiceCredentials, EmailServiceOptions } from '../EmailService'
 import { EmailCacheService, CachedEmail, CachedEmailContent } from '../../cache/EmailCacheService'
-import { ImapContainer } from '../../../src/imap/ImapContainer'
-import { IdleConnectionManager } from '../../../src/imap/IdleConnectionManager'
-import { EmailParser } from '../../../src/imap/EmailParser'
-import { MimeParser } from '../../../src/imap/MimeParser'
+import { ImapContainer } from '../../imap/ImapContainer'
+import { IdleConnectionManager } from '../../imap/IdleConnectionManager'
+import { EmailParser } from '../../imap/EmailParser'
+import { MimeParser } from '../../imap/MimeParser'
 
 // Mock dependencies
-vi.mock('../../../src/imap/ImapContainer')
-vi.mock('../../../src/imap/IdleConnectionManager')
-vi.mock('../../../src/imap/EmailParser')
-vi.mock('../../../src/imap/MimeParser')
+vi.mock('../../imap/ImapContainer')
+vi.mock('../../imap/IdleConnectionManager')
+vi.mock('../../imap/EmailParser')
+vi.mock('../../imap/MimeParser')
 
 describe('EmailService - Core Email Operations', () => {
   let emailService: EmailService

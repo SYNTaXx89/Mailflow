@@ -1,5 +1,5 @@
 import { simpleParser, ParsedMail, Attachment } from 'mailparser';
-import { EmailFrom } from '../types';
+import { EmailFrom } from '../../src/types';
 
 export interface ParsedAttachment {
   filename: string;

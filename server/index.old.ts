@@ -10,7 +10,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
-import { ImapService } from '../src/imap';
+import { ImapService } from './imap';
 
 const app = express();
 const PORT = process.env.PORT || 3001;

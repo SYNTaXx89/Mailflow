@@ -12,11 +12,11 @@
  * - Business logic implementation
  */
 
-import { ImapContainer, ImapCredentials, RawEmail, RawEmailContent } from '../../src/imap/ImapContainer';
-import { MimeParser } from '../../src/imap/MimeParser';
-import { EmailParser } from '../../src/imap/EmailParser';
+import { ImapContainer, ImapCredentials, RawEmail, RawEmailContent } from '../imap/ImapContainer';
+import { MimeParser } from '../imap/MimeParser';
+import { EmailParser } from '../imap/EmailParser';
 import { EmailCacheService, CachedEmail, CachedEmailContent } from '../cache/EmailCacheService';
-import { IdleConnectionManager, IdleCredentials, IdleEvents } from '../../src/imap/IdleConnectionManager';
+import { IdleConnectionManager, IdleCredentials, IdleEvents } from '../imap/IdleConnectionManager';
 
 export interface EmailServiceCredentials {
   host: string;

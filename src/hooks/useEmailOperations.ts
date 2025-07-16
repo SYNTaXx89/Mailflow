@@ -15,7 +15,7 @@ import { useState, useEffect } from 'react';
 import { Email, Account, ComposerType, ComposerData } from '../types/index';
 import { apiConfig } from '../config/api';
 import { EmailApi } from '../utils/api';
-import { ImapApiService } from '../utils/imap-api';
+// ImapApiService removed - frontend uses backend API only
 
 export const useEmailOperations = (accounts: Account[], selectedAccountId: string | null, isAuthenticated: boolean) => {
   const [currentEmails, setCurrentEmails] = useState<Email[]>([]);
@@ -253,8 +253,61 @@ export const useEmailOperations = (accounts: Account[], selectedAccountId: strin
         subject: composerData.subject
       });
 
-      // Send email via real SMTP
-      const result = await ImapApiService.sendEmail(currentAccount, composerData);
+      // Send email via backend SMTP API
+      const token = localStorage.getItem('mailflow_access_token');
+      if (!token) {
+        console.error('useEmailOperations: No authentication token found');
+        return false;
+      }
+
+      // Prepare request based on whether there are attachments
+      let requestOptions: RequestInit;
+      
+      if (composerData.attachments && composerData.attachments.length > 0) {
+        // Use FormData for multipart/form-data when attachments are present
+        const formData = new FormData();
+        formData.append('account', JSON.stringify(currentAccount));
+        formData.append('emailData', JSON.stringify({
+          to: composerData.to,
+          subject: composerData.subject,
+          body: composerData.body || ''
+        }));
+        formData.append('password', currentAccount.password || '');
+        
+        // Add attachments
+        for (const attachment of composerData.attachments) {
+          formData.append('attachments', attachment.file, attachment.name);
+        }
+        
+        requestOptions = {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        };
+      } else {
+        // Use JSON for simple emails without attachments
+        requestOptions = {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            account: currentAccount,
+            emailData: {
+              to: composerData.to,
+              subject: composerData.subject,
+              body: composerData.body || ''
+            },
+            password: currentAccount.password
+          })
+        };
+      }
+      
+      const response = await fetch(`${apiConfig.baseUrl}/smtp/send`, requestOptions);
+      const result = await response.json();
       
       if (result.success) {
         console.log('useEmailOperations: Email sent successfully via SMTP:', result.messageId);
