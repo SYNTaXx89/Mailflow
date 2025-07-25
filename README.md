@@ -44,7 +44,7 @@ Stop wasting time adding the same email accounts to every new device. Stop deali
 - **🔑 JWT Authentication**: Secure token-based authentication with automatic refresh
 - **🛡️ Zero Trust**: Your credentials never leave your server
 - **🏗️ Self-Hosted**: Complete control over your email infrastructure  
-- **🔒 Encrypted Storage**: SQLite database with encrypted sensitive data
+- **🔒 Encrypted Storage**: SQLite/PostgreSQL database with encrypted sensitive data
 - **🎯 Setup Wizard**: Initial configuration with admin account creation
 - **🐳 Docker-First**: Consistent deployment across all environments
 
@@ -135,6 +135,8 @@ services:
 |----------|---------|-------------|
 | `NODE_ENV` | `production` | Runtime environment |
 | `MAILFLOW_DATA_DIR` | `/app/data/.mailflow` | Data storage directory |
+| `DATABASE_URL` | *none* | PostgreSQL connection string (optional) |
+| `POSTGRES_URL` | *none* | Alternative PostgreSQL connection string |
 | `VITE_API_BASE_URL` | `/api` | API base URL |
 | `VITE_APP_NAME` | `Mailflow` | Application name |
 
@@ -148,6 +150,160 @@ services:
 ./src:/app/src:ro
 ./server:/app/server:ro
 ```
+
+---
+
+## 🐘 **Database Configuration**
+
+Mailflow supports both **SQLite** (default) and **PostgreSQL** databases with automatic detection.
+
+### **SQLite (Default)**
+
+**No configuration needed** - Mailflow uses SQLite by default:
+
+```yaml
+# docker-compose.yml - No database environment variables
+services:
+  mailflow:
+    image: mailflow:latest
+    # SQLite database automatically created in mounted volume
+    volumes:
+      - ./mailflow-data:/app/data/.mailflow:rw
+```
+
+**Benefits:**
+- ✅ **Zero Configuration** - Works out of the box
+- ✅ **Self-Contained** - No external dependencies  
+- ✅ **Backup Friendly** - Single database file
+- ✅ **Perfect for** - Single user, personal deployments
+
+### **PostgreSQL (Optional)**
+
+**Automatic PostgreSQL detection** - Set a connection string environment variable:
+
+```yaml
+# docker-compose.yml - PostgreSQL configuration
+services:
+  mailflow:
+    image: mailflow:latest
+    environment:
+      # Option 1: DATABASE_URL (Railway/Render standard)
+      - DATABASE_URL=postgresql://username:password@host:port/database
+      
+      # Option 2: POSTGRES_URL (alternative name)  
+      - POSTGRES_URL=postgresql://username:password@host:port/database
+```
+
+**Benefits:**
+- ✅ **Production Scale** - Handle larger datasets and concurrent users
+- ✅ **Cloud Ready** - Works with Railway, Render, AWS RDS, etc.
+- ✅ **Advanced Features** - Better query performance, transactions
+- ✅ **Perfect for** - Multi-user, production deployments
+
+### **Database Selection Logic**
+
+```mermaid
+graph TD
+    A[Mailflow Starts] --> B{DATABASE_URL or POSTGRES_URL set?}
+    B -->|Yes| C[Test PostgreSQL Connection]
+    B -->|No| D[Use SQLite Database]
+    C -->|Success| E[Use PostgreSQL Database]
+    C -->|Failed| F[Log Error & Exit]
+    D --> G[Application Ready]
+    E --> G[Application Ready]
+    F --> H[Check Connection String]
+```
+
+**Automatic Detection:**
+1. **Check Environment** - Look for `DATABASE_URL` or `POSTGRES_URL`
+2. **Test Connection** - Verify PostgreSQL is accessible
+3. **Use PostgreSQL** - If connection succeeds
+4. **Fallback to SQLite** - Only if no PostgreSQL variables are set
+5. **Fail Fast** - Exit with error if PostgreSQL is configured but unreachable
+
+### **PostgreSQL Setup Examples**
+
+#### **Local PostgreSQL**
+```bash
+# Start local PostgreSQL
+docker run -d --name postgres \
+  -e POSTGRES_DB=mailflow \
+  -e POSTGRES_USER=mailflow_user \
+  -e POSTGRES_PASSWORD=secure_password \
+  -p 5432:5432 postgres:15
+
+# Run Mailflow with PostgreSQL
+docker run -d --name mailflow \
+  -e DATABASE_URL=postgresql://mailflow_user:secure_password@localhost:5432/mailflow \
+  -p 3000:3001 \
+  mailflow:latest
+```
+
+#### **Cloud PostgreSQL**
+```yaml
+# Railway.app / Render.com
+services:
+  mailflow:
+    image: mailflow:latest
+    environment:
+      # Railway automatically provides DATABASE_URL when you add PostgreSQL
+      - DATABASE_URL=${DATABASE_URL}
+```
+
+#### **Docker Compose with PostgreSQL**
+```yaml
+# docker-compose.yml
+version: '3.8'
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: mailflow
+      POSTGRES_USER: mailflow_user
+      POSTGRES_PASSWORD: secure_password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    
+  mailflow:
+    image: mailflow:latest
+    environment:
+      - DATABASE_URL=postgresql://mailflow_user:secure_password@postgres:5432/mailflow
+    depends_on:
+      - postgres
+
+volumes:
+  postgres-data:
+```
+
+### **Development Testing**
+
+Use the included PostgreSQL development environment:
+
+```bash
+# Start PostgreSQL for testing
+docker compose -f docker-compose.dev.yml up postgres -d
+
+# Test locally with PostgreSQL connection
+DATABASE_URL=postgresql://mailflow_user:mailflow_dev_password@localhost:5432/mailflow_dev \
+npm run dev:backend
+
+# Use helper script
+./scripts/test-postgres.sh start     # Start PostgreSQL
+./scripts/test-postgres.sh test-local # Test connection
+```
+
+### **Migration & Data**
+
+- **No automatic migration** between SQLite ↔ PostgreSQL
+- **Both databases create identical schemas** automatically
+- **Choose database type at deployment time**
+- **Existing SQLite data remains untouched** when switching to PostgreSQL
+
+**Schema Compatibility:**
+- ✅ Identical table structures
+- ✅ Same data types (mapped appropriately)  
+- ✅ Identical encryption and security
+- ✅ Same API behavior
 
 ---
 
@@ -192,7 +348,7 @@ Mailflow Docker Architecture:
 │  ├── Setup API (admin creation)    │
 │  ├── Auth API (login/refresh)      │
 │  ├── Protected Routes              │
-│  └── SQLite Database (encrypted)   │
+│  └── Database (SQLite/PostgreSQL)  │
 ├─────────────────────────────────────┤
 │  Persistent Data Volume             │
 │  ├── config.json                   │
@@ -497,7 +653,7 @@ Mailflow is a **beta-stage email client** with full email functionality and real
 - **🔑 JWT Authentication System**: Complete token-based auth with refresh tokens
 - **🎯 Setup Wizard**: Initial configuration flow
 - **🔐 Secure Login**: Email/password authentication with token management
-- **🛡️ Encrypted Storage**: SQLite database with AES-256-CBC credential encryption
+- **🛡️ Encrypted Storage**: SQLite/PostgreSQL database with AES-256-CBC credential encryption
 - **🏢 Multi-Account Management**: Full CRUD operations for email accounts
 - **📧 Email Caching**: Database-backed email storage and synchronization
 - **⚙️ User Settings**: Personalized application preferences

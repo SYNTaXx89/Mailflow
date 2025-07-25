@@ -11,7 +11,7 @@ import cors from 'cors';
 import path from 'path';
 import { ImapService } from './imap';
 import { ConfigManager } from './config/ConfigManager';
-import { DatabaseManager } from './database/DatabaseManager';
+import { createDatabaseManager } from './database';
 import { TokenManager } from './auth/TokenManager';
 import { AuthMiddleware } from './auth/AuthMiddleware';
 
@@ -34,7 +34,7 @@ const isDevelopment = process.env.NODE_ENV !== 'production';
 
 // Create instances
 let configManager: ConfigManager;
-let databaseManager: DatabaseManager;
+let databaseManager: any; // DatabaseManager | PostgreSQLDatabaseManager (identical APIs)
 let emailCacheService: EmailCacheService;
 
 // Initialize configuration and database
@@ -46,9 +46,8 @@ async function initializeApp() {
     configManager = new ConfigManager();
     await configManager.initialize();
     
-    // Create and initialize database
-    databaseManager = new DatabaseManager(configManager);
-    await databaseManager.initialize();
+    // Create and initialize database (factory chooses SQLite or PostgreSQL)
+    databaseManager = await createDatabaseManager(configManager);
     
     // Create email cache service
     emailCacheService = new EmailCacheService(databaseManager);

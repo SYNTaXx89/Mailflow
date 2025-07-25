@@ -1,27 +1,31 @@
 /**
- * DatabaseManager - SQLite database operations
+ * PostgreSQLDatabaseManager - PostgreSQL database operations
  * 
- * Handles database initialization, migrations, and basic CRUD operations
- * for the self-hosted Mailflow instance.
+ * Provides identical interface to SQLite DatabaseManager but uses PostgreSQL
+ * underneath. Maintains same encryption, migrations, and CRUD operations.
  */
 
-import sqlite3 from 'sqlite3';
+import { Pool, PoolClient } from 'pg';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 import { ConfigManager } from '../config/ConfigManager';
 import { IDatabaseManager, User, Account, Email, AppSettings } from './IDatabaseManager';
 
-export class DatabaseManager implements IDatabaseManager {
-  private db: sqlite3.Database | null = null;
-  private dbPath: string;
+export class PostgreSQLDatabaseManager implements IDatabaseManager {
+  private pool: Pool;
   private encryptionKey: string;
 
-  constructor(private configManager: ConfigManager) {
-    const configDir = this.configManager.getConfigDir();
-    this.dbPath = path.join(configDir, 'database.db');
+  constructor(private configManager: ConfigManager, private connectionString: string) {
+    this.pool = new Pool({
+      connectionString: this.connectionString,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 2000,
+    });
     
-    // Encryption key will be initialized later in initialize() method
+    // Encryption key will be initialized in initialize() method
     this.encryptionKey = '';
   }
 
@@ -30,32 +34,19 @@ export class DatabaseManager implements IDatabaseManager {
    */
   async initialize(): Promise<void> {
     try {
-      // Ensure database directory exists
-      const dbDir = path.dirname(this.dbPath);
-      if (!fs.existsSync(dbDir)) {
-        fs.mkdirSync(dbDir, { recursive: true });
-      }
+      // Test connection
+      const client = await this.pool.connect();
+      await client.query('SELECT NOW()');
+      client.release();
 
-      // Ensure credentials directory exists
+      // Ensure credentials directory exists for encryption key
       const credentialsDir = path.join(this.configManager.getConfigDir(), 'credentials');
       if (!fs.existsSync(credentialsDir)) {
         fs.mkdirSync(credentialsDir, { recursive: true });
       }
 
-      // Generate or load encryption key (now that directories exist)
+      // Generate or load encryption key
       this.encryptionKey = this.getOrCreateEncryptionKey();
-
-      // Open database connection
-      this.db = new sqlite3.Database(this.dbPath, (err) => {
-        if (err) {
-          console.error('❌ Failed to connect to database:', err);
-          throw err;
-        }
-        console.log('✅ Connected to SQLite database');
-      });
-
-      // Enable foreign keys
-      await this.run('PRAGMA foreign_keys = ON');
 
       // Create tables
       await this.createTables();
@@ -63,9 +54,9 @@ export class DatabaseManager implements IDatabaseManager {
       // Run migrations for schema updates
       await this.runMigrations();
       
-      console.log('✅ Database initialized successfully');
+      console.log('✅ PostgreSQL database initialized successfully');
     } catch (error) {
-      console.error('❌ Failed to initialize database:', error);
+      console.error('❌ Failed to initialize PostgreSQL database:', error);
       throw error;
     }
   }
@@ -81,7 +72,7 @@ export class DatabaseManager implements IDatabaseManager {
         email TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
         role TEXT DEFAULT 'user',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )`,
       
       // Accounts table
@@ -92,7 +83,7 @@ export class DatabaseManager implements IDatabaseManager {
         email TEXT NOT NULL,
         encrypted_credentials TEXT NOT NULL,
         config TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
       )`,
       
@@ -105,12 +96,12 @@ export class DatabaseManager implements IDatabaseManager {
         recipient TEXT,
         preview TEXT,
         full_body TEXT,
-        date DATETIME,
+        date TIMESTAMP,
         is_read BOOLEAN DEFAULT FALSE,
         has_attachments BOOLEAN DEFAULT FALSE,
         uid TEXT,
         message_id TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (account_id) REFERENCES accounts (id) ON DELETE CASCADE
       )`,
       
@@ -120,7 +111,7 @@ export class DatabaseManager implements IDatabaseManager {
         user_id TEXT NOT NULL,
         key TEXT NOT NULL,
         value TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
         UNIQUE(user_id, key)
       )`,
@@ -133,7 +124,7 @@ export class DatabaseManager implements IDatabaseManager {
     ];
 
     for (const table of tables) {
-      await this.run(table);
+      await this.query(table);
     }
   }
 
@@ -142,72 +133,56 @@ export class DatabaseManager implements IDatabaseManager {
    */
   private async runMigrations(): Promise<void> {
     try {
-      console.log('🔄 Running database migrations...');
+      console.log('🔄 Running PostgreSQL database migrations...');
       
-      // Check if emails table has old 'body' column instead of 'preview'
-      const columns = await this.all(`PRAGMA table_info(emails)`);
-      const hasBodyColumn = columns.some((col: any) => col.name === 'body');
-      const hasPreviewColumn = columns.some((col: any) => col.name === 'preview');
-      const hasFullBodyColumn = columns.some((col: any) => col.name === 'full_body');
+      // Check if emails table has old structure and migrate if needed
+      const columns = await this.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'emails' AND table_schema = 'public'
+      `);
+      
+      const columnNames = columns.map((col: any) => col.column_name);
+      const hasBodyColumn = columnNames.includes('body');
+      const hasPreviewColumn = columnNames.includes('preview');
+      const hasFullBodyColumn = columnNames.includes('full_body');
+      const hasAttachmentsColumn = columnNames.includes('has_attachments');
       
       if (hasBodyColumn && !hasPreviewColumn) {
         console.log('📝 Migrating emails table: body -> preview, adding full_body...');
         
-        // Rename body to preview and add full_body column
-        await this.run(`
-          CREATE TABLE emails_new (
-            id TEXT PRIMARY KEY,
-            account_id TEXT NOT NULL,
-            subject TEXT,
-            sender TEXT,
-            recipient TEXT,
-            preview TEXT,
-            full_body TEXT,
-            date DATETIME,
-            is_read BOOLEAN DEFAULT FALSE,
-            has_attachments BOOLEAN DEFAULT FALSE,
-            uid TEXT,
-            message_id TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (account_id) REFERENCES accounts (id) ON DELETE CASCADE
-          )
+        // Add new columns
+        await this.query('ALTER TABLE emails ADD COLUMN preview TEXT');
+        await this.query('ALTER TABLE emails ADD COLUMN full_body TEXT');
+        
+        // Copy data from body to preview, removing PREVIEW: prefix if present
+        await this.query(`
+          UPDATE emails 
+          SET preview = CASE 
+            WHEN body LIKE 'PREVIEW:%' THEN SUBSTR(body, 9)
+            ELSE body
+          END
         `);
         
-        // Copy data from old table, removing PREVIEW: prefix if present
-        await this.run(`
-          INSERT INTO emails_new 
-          SELECT 
-            id, account_id, subject, sender, recipient,
-            CASE 
-              WHEN body LIKE 'PREVIEW:%' THEN SUBSTR(body, 9)
-              ELSE body
-            END as preview,
-            NULL as full_body,
-            date, is_read, uid, message_id, created_at
-          FROM emails
-        `);
-        
-        // Drop old table and rename new one
-        await this.run('DROP TABLE emails');
-        await this.run('ALTER TABLE emails_new RENAME TO emails');
+        // Drop old body column
+        await this.query('ALTER TABLE emails DROP COLUMN body');
         
         console.log('✅ Migration completed: emails table updated');
       } else if (!hasFullBodyColumn) {
         // Just add full_body column if missing
-        await this.run('ALTER TABLE emails ADD COLUMN full_body TEXT');
+        await this.query('ALTER TABLE emails ADD COLUMN full_body TEXT');
         console.log('✅ Added full_body column to emails table');
       }
       
       // Check if has_attachments column exists
-      const hasAttachmentsColumn = columns.some((col: any) => col.name === 'has_attachments');
       if (!hasAttachmentsColumn) {
-        await this.run('ALTER TABLE emails ADD COLUMN has_attachments BOOLEAN DEFAULT FALSE');
+        await this.query('ALTER TABLE emails ADD COLUMN has_attachments BOOLEAN DEFAULT FALSE');
         console.log('✅ Added has_attachments column to emails table');
       }
       
-      console.log('✅ Database migrations completed');
+      console.log('✅ PostgreSQL database migrations completed');
     } catch (error) {
-      console.error('❌ Migration failed:', error);
+      console.error('❌ PostgreSQL migration failed:', error);
       throw error;
     }
   }
@@ -251,83 +226,38 @@ export class DatabaseManager implements IDatabaseManager {
   }
 
   /**
-   * Execute a SQL query that doesn't return data
+   * Execute a SQL query
    */
-  private run(sql: string, params: any[] = []): Promise<sqlite3.RunResult> {
-    return new Promise((resolve, reject) => {
-      if (!this.db) {
-        reject(new Error('Database not initialized'));
-        return;
-      }
-
-      this.db.run(sql, params, function(err) {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(this);
-        }
-      });
-    });
-  }
-
-  /**
-   * Execute a SQL query that returns a single row
-   */
-  private get<T = any>(sql: string, params: any[] = []): Promise<T | undefined> {
-    return new Promise((resolve, reject) => {
-      if (!this.db) {
-        reject(new Error('Database not initialized'));
-        return;
-      }
-
-      this.db.get(sql, params, (err, row) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(row as T);
-        }
-      });
-    });
-  }
-
-  /**
-   * Execute a SQL query that returns multiple rows
-   */
-  private all<T = any>(sql: string, params: any[] = []): Promise<T[]> {
-    return new Promise((resolve, reject) => {
-      if (!this.db) {
-        reject(new Error('Database not initialized'));
-        return;
-      }
-
-      this.db.all(sql, params, (err, rows) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(rows as T[]);
-        }
-      });
-    });
+  private async query(sql: string, params: any[] = []): Promise<any[]> {
+    const client = await this.pool.connect();
+    try {
+      const result = await client.query(sql, params);
+      return result.rows;
+    } finally {
+      client.release();
+    }
   }
 
   // User operations
   async createUser(id: string, email: string, passwordHash: string, role: 'admin' | 'user' = 'user'): Promise<void> {
-    await this.run(
-      'INSERT INTO users (id, email, password_hash, role) VALUES (?, ?, ?, ?)',
+    await this.query(
+      'INSERT INTO users (id, email, password_hash, role) VALUES ($1, $2, $3, $4)',
       [id, email, passwordHash, role]
     );
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return await this.get<User>('SELECT * FROM users WHERE email = ?', [email]);
+    const result = await this.query('SELECT * FROM users WHERE email = $1', [email]);
+    return result[0];
   }
 
   async getUserById(id: string): Promise<User | undefined> {
-    return await this.get<User>('SELECT * FROM users WHERE id = ?', [id]);
+    const result = await this.query('SELECT * FROM users WHERE id = $1', [id]);
+    return result[0];
   }
 
   async getAllUsers(): Promise<User[]> {
-    return await this.all<User>('SELECT * FROM users ORDER BY created_at DESC');
+    return await this.query('SELECT * FROM users ORDER BY created_at DESC');
   }
 
   async updateUser(id: string, updates: Partial<User>): Promise<void> {
@@ -341,22 +271,22 @@ export class DatabaseManager implements IDatabaseManager {
       throw new Error('No valid fields to update');
     }
     
-    const fields = Object.keys(validUpdates).map(key => `${key} = ?`).join(', ');
+    const fields = Object.keys(validUpdates).map((key, index) => `${key} = $${index + 2}`).join(', ');
     const values = Object.values(validUpdates);
-    values.push(id);
+    values.unshift(id);
     
-    await this.run(`UPDATE users SET ${fields} WHERE id = ?`, values);
+    await this.query(`UPDATE users SET ${fields} WHERE id = $1`, values);
   }
 
   async deleteUser(id: string): Promise<void> {
-    await this.run('DELETE FROM users WHERE id = ?', [id]);
+    await this.query('DELETE FROM users WHERE id = $1', [id]);
   }
 
   // Account operations
   async createAccount(account: Omit<Account, 'created_at'>): Promise<boolean> {
     try {
-      await this.run(
-        'INSERT INTO accounts (id, user_id, name, email, encrypted_credentials, config) VALUES (?, ?, ?, ?, ?, ?)',
+      await this.query(
+        'INSERT INTO accounts (id, user_id, name, email, encrypted_credentials, config) VALUES ($1, $2, $3, $4, $5, $6)',
         [account.id, account.user_id, account.name, account.email, account.encrypted_credentials, account.config]
       );
       return true;
@@ -367,7 +297,7 @@ export class DatabaseManager implements IDatabaseManager {
   }
 
   async getAccountsByUserId(userId: string): Promise<Account[]> {
-    return await this.all<Account>('SELECT * FROM accounts WHERE user_id = ? ORDER BY created_at DESC', [userId]);
+    return await this.query('SELECT * FROM accounts WHERE user_id = $1 ORDER BY created_at DESC', [userId]);
   }
 
   // Alias for frontend compatibility
@@ -376,7 +306,8 @@ export class DatabaseManager implements IDatabaseManager {
   }
 
   async getAccountById(id: string): Promise<Account | undefined> {
-    return await this.get<Account>('SELECT * FROM accounts WHERE id = ?', [id]);
+    const result = await this.query('SELECT * FROM accounts WHERE id = $1', [id]);
+    return result[0];
   }
 
   async updateAccount(id: string, updates: Partial<Account>): Promise<boolean> {
@@ -391,11 +322,11 @@ export class DatabaseManager implements IDatabaseManager {
         throw new Error('No valid fields to update');
       }
       
-      const fields = Object.keys(validUpdates).map(key => `${key} = ?`).join(', ');
+      const fields = Object.keys(validUpdates).map((key, index) => `${key} = $${index + 2}`).join(', ');
       const values = Object.values(validUpdates);
-      values.push(id);
+      values.unshift(id);
       
-      await this.run(`UPDATE accounts SET ${fields} WHERE id = ?`, values);
+      await this.query(`UPDATE accounts SET ${fields} WHERE id = $1`, values);
       return true;
     } catch (error) {
       console.error('Failed to update account:', error);
@@ -405,7 +336,7 @@ export class DatabaseManager implements IDatabaseManager {
 
   async deleteAccount(id: string): Promise<boolean> {
     try {
-      await this.run('DELETE FROM accounts WHERE id = ?', [id]);
+      await this.query('DELETE FROM accounts WHERE id = $1', [id]);
       return true;
     } catch (error) {
       console.error('Failed to delete account:', error);
@@ -415,28 +346,29 @@ export class DatabaseManager implements IDatabaseManager {
 
   // Email operations
   async createEmail(email: Omit<Email, 'created_at'>): Promise<void> {
-    await this.run(
-      'INSERT INTO emails (id, account_id, subject, sender, recipient, preview, full_body, date, is_read, uid, message_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    await this.query(
+      'INSERT INTO emails (id, account_id, subject, sender, recipient, preview, full_body, date, is_read, uid, message_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)',
       [email.id, email.account_id, email.subject, email.sender, email.recipient, email.preview, email.full_body, email.date, email.is_read, email.uid, email.message_id]
     );
   }
 
   async createEmailSafe(email: Omit<Email, 'created_at'>): Promise<void> {
-    await this.run(
-      'INSERT OR IGNORE INTO emails (id, account_id, subject, sender, recipient, preview, full_body, date, is_read, has_attachments, uid, message_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    await this.query(
+      'INSERT INTO emails (id, account_id, subject, sender, recipient, preview, full_body, date, is_read, has_attachments, uid, message_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT (id) DO NOTHING',
       [email.id, email.account_id, email.subject, email.sender, email.recipient, email.preview, email.full_body, email.date, email.is_read, email.has_attachments, email.uid, email.message_id]
     );
   }
 
   async getEmailsByAccountId(accountId: string, limit: number = 50): Promise<Email[]> {
-    return await this.all<Email>(
-      'SELECT * FROM emails WHERE account_id = ? ORDER BY date DESC LIMIT ?',
+    return await this.query(
+      'SELECT * FROM emails WHERE account_id = $1 ORDER BY date DESC LIMIT $2',
       [accountId, limit]
     );
   }
 
   async getEmailById(id: string): Promise<Email | undefined> {
-    return await this.get<Email>('SELECT * FROM emails WHERE id = ?', [id]);
+    const result = await this.query('SELECT * FROM emails WHERE id = $1', [id]);
+    return result[0];
   }
 
   async updateEmail(id: string, updates: Partial<Email>): Promise<void> {
@@ -450,36 +382,36 @@ export class DatabaseManager implements IDatabaseManager {
       throw new Error('No valid fields to update');
     }
     
-    const fields = Object.keys(validUpdates).map(key => `${key} = ?`).join(', ');
+    const fields = Object.keys(validUpdates).map((key, index) => `${key} = $${index + 2}`).join(', ');
     const values = Object.values(validUpdates);
-    values.push(id);
+    values.unshift(id);
     
-    await this.run(`UPDATE emails SET ${fields} WHERE id = ?`, values);
+    await this.query(`UPDATE emails SET ${fields} WHERE id = $1`, values);
   }
 
   async deleteEmail(id: string): Promise<void> {
-    await this.run('DELETE FROM emails WHERE id = ?', [id]);
+    await this.query('DELETE FROM emails WHERE id = $1', [id]);
   }
 
   async clearEmailsByAccountId(accountId: string): Promise<void> {
-    await this.run('DELETE FROM emails WHERE account_id = ?', [accountId]);
+    await this.query('DELETE FROM emails WHERE account_id = $1', [accountId]);
   }
 
   // Settings operations
   async setSetting(userId: string, key: string, value: string): Promise<void> {
-    await this.run(
-      'INSERT OR REPLACE INTO settings (id, user_id, key, value) VALUES (?, ?, ?, ?)',
+    await this.query(
+      'INSERT INTO settings (id, user_id, key, value) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id, key) DO UPDATE SET value = $4',
       [crypto.randomUUID(), userId, key, value]
     );
   }
 
   async getSetting(userId: string, key: string): Promise<string | undefined> {
-    const setting = await this.get<AppSettings>('SELECT value FROM settings WHERE user_id = ? AND key = ?', [userId, key]);
-    return setting?.value;
+    const result = await this.query('SELECT value FROM settings WHERE user_id = $1 AND key = $2', [userId, key]);
+    return result[0]?.value;
   }
 
   async getAllSettings(userId: string): Promise<Record<string, string>> {
-    const settings = await this.all<AppSettings>('SELECT key, value FROM settings WHERE user_id = ?', [userId]);
+    const settings = await this.query('SELECT key, value FROM settings WHERE user_id = $1', [userId]);
     return settings.reduce((acc, setting) => {
       acc[setting.key] = setting.value;
       return acc;
@@ -490,21 +422,8 @@ export class DatabaseManager implements IDatabaseManager {
    * Close database connection
    */
   async close(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (!this.db) {
-        resolve();
-        return;
-      }
-
-      this.db.close((err) => {
-        if (err) {
-          reject(err);
-        } else {
-          console.log('✅ Database connection closed');
-          resolve();
-        }
-      });
-    });
+    await this.pool.end();
+    console.log('✅ PostgreSQL database connection closed');
   }
 
   /**
@@ -512,10 +431,10 @@ export class DatabaseManager implements IDatabaseManager {
    */
   async getHealthStatus(): Promise<{ healthy: boolean; message: string }> {
     try {
-      await this.get('SELECT 1');
-      return { healthy: true, message: 'Database connection is healthy' };
+      const result = await this.query('SELECT 1 as test');
+      return { healthy: true, message: 'PostgreSQL connection is healthy' };
     } catch (error) {
-      return { healthy: false, message: `Database error: ${error}` };
+      return { healthy: false, message: `PostgreSQL error: ${error}` };
     }
   }
 }

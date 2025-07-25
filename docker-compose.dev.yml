@@ -1,9 +1,31 @@
 # Mailflow - Development Docker Compose
 # For development with hot-reload and debugging
+# Includes PostgreSQL for testing database integration
 
 version: '3.8'
 
 services:
+  # PostgreSQL Database for development/testing
+  postgres:
+    image: postgres:15-alpine
+    container_name: mailflow-postgres-dev
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: mailflow_dev
+      POSTGRES_USER: mailflow_user
+      POSTGRES_PASSWORD: mailflow_dev_password
+    # No persistent volume - ephemeral database for testing
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mailflow_user -d mailflow_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - mailflow-dev-network
+
   mailflow-dev:
     build:
       context: .
@@ -29,15 +51,45 @@ services:
     environment:
       - NODE_ENV=development
       - MAILFLOW_DATA_DIR=/app/data/.mailflow
+      
+      # PostgreSQL Connection (comment out to use SQLite)
+      - DATABASE_URL=postgresql://mailflow_user:mailflow_dev_password@postgres:5432/mailflow_dev
+      
+      # Frontend settings
       - VITE_API_BASE_URL=http://localhost:3001/api
       - VITE_APP_NAME=Mailflow Dev
       - VITE_APP_VERSION=1.0.0-dev
+    depends_on:
+      postgres:
+        condition: service_healthy
     command: npm run dev
     networks:
       - mailflow-dev-network
+
+  # pgAdmin for database management (optional)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: mailflow-pgadmin-dev
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@mailflow.local
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin-dev-data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - mailflow-dev-network
+    profiles:
+      - pgadmin  # Optional service, start with: docker compose --profile pgadmin up
 
 networks:
   mailflow-dev-network:
     driver: bridge
 
-# Named volumes removed - using bind mounts for development
+volumes:
+  pgadmin-dev-data:
+    driver: local
