@@ -26,6 +26,7 @@ import { createSettingsRouter } from './routes/settings';
 import { createExportRouter } from './routes/export';
 import { createIdleRouter } from './routes/idle';
 import { EmailCacheService } from './cache/EmailCacheService';
+import { redactSensitiveFields } from './utils/securityUtils';
 // emailsV2Routes removed - now using smart routes as main emails routes
 
 const app = express();
@@ -79,13 +80,7 @@ app.use((req, res, next) => {
   }
   
   if (req.body && Object.keys(req.body).length > 0) {
-    const bodyLog = { ...req.body };
-    // Redact all password-related fields
-    const passwordFields = ['password', 'confirmPassword', 'currentPassword', 'newPassword', 'oldPassword'];
-    passwordFields.forEach(field => {
-      if (bodyLog[field]) bodyLog[field] = '[REDACTED]';
-    });
-    console.log(`📋 Request body:`, bodyLog);
+    console.log(`📋 Request body:`, redactSensitiveFields(req.body));
   }
   
   next();
