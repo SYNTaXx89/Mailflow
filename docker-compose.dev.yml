@@ -52,8 +52,15 @@ services:
       - NODE_ENV=development
       - MAILFLOW_DATA_DIR=/app/data/.mailflow
       
-      # PostgreSQL Connection (comment out to use SQLite)
+      # PostgreSQL Connection - Option 1: Full URL (comment out to use SQLite)
       - DATABASE_URL=postgresql://mailflow_user:mailflow_dev_password@postgres:5432/mailflow_dev
+      
+      # PostgreSQL Connection - Option 2: Individual parameters (alternative to DATABASE_URL)
+      # - POSTGRES_HOST=postgres
+      # - POSTGRES_PORT=5432
+      # - POSTGRES_DB=mailflow_dev
+      # - POSTGRES_USER=mailflow_user
+      # - POSTGRES_PASSWORD=mailflow_dev_password
       
       # Frontend settings
       - VITE_API_BASE_URL=http://localhost:3001/api

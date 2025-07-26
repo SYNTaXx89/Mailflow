@@ -75,9 +75,27 @@ case "$1" in
         ;;
     
     "test-local")
-        print_header "Testing PostgreSQL Connection Locally"
+        print_header "Testing PostgreSQL Connection Locally (Connection URL)"
         export DATABASE_URL="postgresql://mailflow_user:mailflow_dev_password@localhost:5432/mailflow_dev"
         echo "DATABASE_URL=$DATABASE_URL"
+        echo ""
+        print_warning "Make sure PostgreSQL is running: $0 start"
+        echo ""
+        npm run dev:backend
+        ;;
+    
+    "test-local-params")
+        print_header "Testing PostgreSQL Connection Locally (Individual Parameters)"
+        export POSTGRES_HOST="localhost"
+        export POSTGRES_PORT="5432"
+        export POSTGRES_DB="mailflow_dev"
+        export POSTGRES_USER="mailflow_user"
+        export POSTGRES_PASSWORD="mailflow_dev_password"
+        echo "POSTGRES_HOST=$POSTGRES_HOST"
+        echo "POSTGRES_PORT=$POSTGRES_PORT"
+        echo "POSTGRES_DB=$POSTGRES_DB"
+        echo "POSTGRES_USER=$POSTGRES_USER"
+        echo "POSTGRES_PASSWORD=***"
         echo ""
         print_warning "Make sure PostgreSQL is running: $0 start"
         echo ""
@@ -115,7 +133,8 @@ case "$1" in
         echo "  start-app  - Start Mailflow app (requires PostgreSQL running)"
         echo "  start-all  - Start both PostgreSQL and Mailflow"  
         echo "  pgadmin    - Start with pgAdmin for database management"
-        echo "  test-local - Test PostgreSQL connection with local backend"
+        echo "  test-local       - Test PostgreSQL connection with local backend (URL)"
+        echo "  test-local-params - Test PostgreSQL connection with individual parameters"
         echo "  stop       - Stop all services"
         echo "  clean      - Stop all services and remove volumes"
         echo "  logs       - Show service logs"
@@ -125,7 +144,8 @@ case "$1" in
         echo "  $0 start                    # Start PostgreSQL"
         echo "  $0 start-all               # Start everything"
         echo "  $0 pgadmin                 # Start with database UI"
-        echo "  $0 test-local              # Test connection locally"
+        echo "  $0 test-local              # Test connection locally (URL)"
+        echo "  $0 test-local-params       # Test connection (parameters)"
         echo ""
         echo "Testing workflow:"
         echo "  1. $0 start                # Start PostgreSQL"

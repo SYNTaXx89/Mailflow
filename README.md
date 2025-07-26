@@ -137,6 +137,11 @@ services:
 | `MAILFLOW_DATA_DIR` | `/app/data/.mailflow` | Data storage directory |
 | `DATABASE_URL` | *none* | PostgreSQL connection string (optional) |
 | `POSTGRES_URL` | *none* | Alternative PostgreSQL connection string |
+| `POSTGRES_HOST` | *none* | PostgreSQL host (when using individual params) |
+| `POSTGRES_PORT` | `5432` | PostgreSQL port (when using individual params) |
+| `POSTGRES_DB` | *none* | PostgreSQL database name (when using individual params) |
+| `POSTGRES_USER` | *none* | PostgreSQL username (when using individual params) |
+| `POSTGRES_PASSWORD` | *none* | PostgreSQL password (when using individual params) |
 | `VITE_API_BASE_URL` | `/api` | API base URL |
 | `VITE_APP_NAME` | `Mailflow` | Application name |
 
@@ -179,7 +184,7 @@ services:
 
 ### **PostgreSQL (Optional)**
 
-**Automatic PostgreSQL detection** - Set a connection string environment variable:
+**Automatic PostgreSQL detection** - Use either connection URL or individual parameters:
 
 ```yaml
 # docker-compose.yml - PostgreSQL configuration
@@ -187,11 +192,18 @@ services:
   mailflow:
     image: mailflow:latest
     environment:
-      # Option 1: DATABASE_URL (Railway/Render standard)
+      # Option 1: Full connection URL (Railway/Render standard)
       - DATABASE_URL=postgresql://username:password@host:port/database
       
-      # Option 2: POSTGRES_URL (alternative name)  
+      # Option 2: Alternative connection URL name
       - POSTGRES_URL=postgresql://username:password@host:port/database
+      
+      # Option 3: Individual parameters (some platforms prefer this)
+      - POSTGRES_HOST=your-postgres-host
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=mailflow
+      - POSTGRES_USER=your-username
+      - POSTGRES_PASSWORD=your-password
 ```
 
 **Benefits:**
@@ -215,11 +227,12 @@ graph TD
 ```
 
 **Automatic Detection:**
-1. **Check Environment** - Look for `DATABASE_URL` or `POSTGRES_URL`
-2. **Test Connection** - Verify PostgreSQL is accessible
-3. **Use PostgreSQL** - If connection succeeds
-4. **Fallback to SQLite** - Only if no PostgreSQL variables are set
-5. **Fail Fast** - Exit with error if PostgreSQL is configured but unreachable
+1. **Check Environment** - Look for `DATABASE_URL`, `POSTGRES_URL`, or individual `POSTGRES_*` parameters
+2. **Build Connection** - Use provided URL or construct from individual parameters
+3. **Test Connection** - Verify PostgreSQL is accessible
+4. **Use PostgreSQL** - If connection succeeds
+5. **Fallback to SQLite** - Only if no PostgreSQL variables are set
+6. **Fail Fast** - Exit with error if PostgreSQL is configured but unreachable
 
 ### **PostgreSQL Setup Examples**
 
@@ -241,13 +254,26 @@ docker run -d --name mailflow \
 
 #### **Cloud PostgreSQL**
 ```yaml
-# Railway.app / Render.com
+# Railway.app / Render.com - Connection URL approach
 services:
   mailflow:
     image: mailflow:latest
     environment:
       # Railway automatically provides DATABASE_URL when you add PostgreSQL
       - DATABASE_URL=${DATABASE_URL}
+```
+
+```yaml
+# Alternative - Individual parameters approach  
+services:
+  mailflow:
+    image: mailflow:latest
+    environment:
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 ```
 
 #### **Docker Compose with PostgreSQL**
