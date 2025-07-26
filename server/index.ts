@@ -80,7 +80,11 @@ app.use((req, res, next) => {
   
   if (req.body && Object.keys(req.body).length > 0) {
     const bodyLog = { ...req.body };
-    if (bodyLog.password) bodyLog.password = '[REDACTED]';
+    // Redact all password-related fields
+    const passwordFields = ['password', 'confirmPassword', 'currentPassword', 'newPassword', 'oldPassword'];
+    passwordFields.forEach(field => {
+      if (bodyLog[field]) bodyLog[field] = '[REDACTED]';
+    });
     console.log(`📋 Request body:`, bodyLog);
   }
   
