@@ -42,10 +42,19 @@ export async function createDatabaseManager(configManager: ConfigManager): Promi
     console.log('🐘 PostgreSQL connection URL detected, using PostgreSQL database');
     console.log(`📡 Connecting to: ${postgresUrl.replace(/\/\/[^@]+@/, '//***:***@')}`); // Hide credentials in logs
   } else if (postgresHost && postgresDb && postgresUser && postgresPassword) {
-    // Build connection URL from individual parameters
-    connectionString = `postgresql://${postgresUser}:${postgresPassword}@${postgresHost}:${postgresPort}/${postgresDb}`;
+    // Validate all required parameters are present and non-empty
+    const params = { postgresHost, postgresDb, postgresUser, postgresPassword, postgresPort };
+    const missingParams = Object.entries(params).filter(([key, value]) => !value || value.trim() === '');
+    
+    if (missingParams.length > 0) {
+      console.error('❌ Missing or empty PostgreSQL parameters:', missingParams.map(([key]) => key));
+      throw new Error(`Missing PostgreSQL parameters: ${missingParams.map(([key]) => key).join(', ')}`);
+    }
+
+    // Build connection URL from individual parameters (SSL handled by Pool config)
+    connectionString = `postgresql://${encodeURIComponent(postgresUser)}:${encodeURIComponent(postgresPassword)}@${postgresHost}:${postgresPort}/${postgresDb}`;
     console.log('🐘 PostgreSQL parameters detected, using PostgreSQL database');
-    console.log(`📡 Connecting to: postgresql://***:***@${postgresHost}:${postgresPort}/${postgresDb}`); // Hide credentials in logs
+    console.log(`📡 Connecting to: postgresql://***:***@${postgresHost}:${postgresPort}/${postgresDb} (SSL handled by Pool config)`); // Hide credentials in logs
   }
   
   if (connectionString) {

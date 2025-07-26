@@ -17,12 +17,30 @@ export class PostgreSQLDatabaseManager implements IDatabaseManager {
   private encryptionKey: string;
 
   constructor(private configManager: ConfigManager, private connectionString: string) {
+    if (!this.connectionString) {
+      throw new Error('PostgreSQL connection string is required but was undefined');
+    }
+    
+    const shouldUseSSL = this.connectionString.includes('supabase.co') || this.connectionString.includes('amazonaws.com') || process.env.NODE_ENV === 'production';
+    console.log(`🔧 SSL Detection: shouldUseSSL=${shouldUseSSL}, NODE_ENV=${process.env.NODE_ENV}`);
+    console.log(`🔧 Connection string contains supabase.co: ${this.connectionString.includes('supabase.co')}`);
+    
     this.pool = new Pool({
       connectionString: this.connectionString,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      // Configure SSL properly for cloud databases
+      ssl: shouldUseSSL 
+        ? { 
+            rejectUnauthorized: false // Accept self-signed certificates
+          } 
+        : false,
       max: 20,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
+      connectionTimeoutMillis: 15000, // Increased timeout for external connections
+      // Additional debugging for connection issues
+      ...(process.env.NODE_ENV === 'development' && {
+        application_name: 'mailflow-dev',
+        connect_timeout: 15,
+      })
     });
     
     // Encryption key will be initialized in initialize() method
@@ -30,13 +48,37 @@ export class PostgreSQLDatabaseManager implements IDatabaseManager {
   }
 
   /**
+   * Extract hostname from connection string for explicit host configuration
+   */
+  private extractHostFromConnectionString(): string {
+    try {
+      const url = new URL(this.connectionString);
+      return url.hostname;
+    } catch (error) {
+      console.warn('⚠️ Could not parse connection string URL, using default host behavior');
+      return '';
+    }
+  }
+
+  /**
    * Initialize database connection and create tables
    */
   async initialize(): Promise<void> {
     try {
-      // Test connection
+      // Debug connection configuration
+      console.log('🔧 PostgreSQL Debug Info:');
+      console.log(`🔧 Connection string pattern: postgresql://***:***@${this.connectionString.split('@')[1]}`);
+      console.log(`🔧 Pool configuration:`, {
+        ssl: this.pool.options.ssl,
+        max: this.pool.options.max,
+        connectionTimeoutMillis: this.pool.options.connectionTimeoutMillis
+      });
+      
+      // Test connection with detailed error handling
+      console.log('🔧 Testing PostgreSQL connection...');
       const client = await this.pool.connect();
-      await client.query('SELECT NOW()');
+      const result = await client.query('SELECT NOW() as current_time, current_database() as db_name, current_user as user_name');
+      console.log('✅ Connection successful! Database info:', result.rows[0]);
       client.release();
 
       // Ensure credentials directory exists for encryption key
@@ -57,6 +99,20 @@ export class PostgreSQLDatabaseManager implements IDatabaseManager {
       console.log('✅ PostgreSQL database initialized successfully');
     } catch (error) {
       console.error('❌ Failed to initialize PostgreSQL database:', error);
+      
+      // Provide specific troubleshooting information
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('password authentication failed')) {
+        console.error('🔧 Authentication failed. Please check:');
+        console.error('   - Username and password are correct');
+        console.error('   - Database name exists');
+        console.error('   - User has permission to access the database');
+      } else if (errorMessage.includes('certificate')) {
+        console.error('🔧 SSL certificate issue. Try setting rejectUnauthorized: false for development');
+      } else if (errorMessage.includes('ENOTFOUND') || errorMessage.includes('ENETUNREACH')) {
+        console.error('🔧 Network connectivity issue. Check host and port settings');
+      }
+      
       throw error;
     }
   }
